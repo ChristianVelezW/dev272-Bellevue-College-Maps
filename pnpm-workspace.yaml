@@ -1,0 +1,14 @@
+# pnpm-workspace.yaml: pnpm settings for this project.
+#
+# pnpm 11 does not run a dependency's install script until you approve or
+# decline it. Until you decide, `pnpm install` stops with
+# ERR_PNPM_IGNORED_BUILDS. allowBuilds records the decision per package:
+#
+#   unrs-resolver: false   Skip its script. ESLint's Expo config brings this
+#                          package in, and its script only downloads a native
+#                          file that pnpm has already installed.
+#
+# Keep this file committed, or a fresh `pnpm install` fails.
+# Docs: https://pnpm.io/settings/build
+allowBuilds:
+  unrs-resolver: false

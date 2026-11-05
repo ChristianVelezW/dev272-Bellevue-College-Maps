@@ -1,0 +1,27 @@
+# Creates the Sprint 0 starter issues and the develop branch when a team
+# generates a repo from the course template. If it did not run, open the Actions
+# tab, pick this workflow, and click "Run workflow". Running it again only adds
+# what is missing.
+name: Create starter issues
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write # to create the develop branch
+  issues: write
+
+jobs:
+  create-issues:
+    # Later pushes to main skip this job.
+    if: github.event_name == 'workflow_dispatch' || github.run_number == 1
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Create any missing starter issues and the develop branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: bash .github/starter-issues/create-issues.sh

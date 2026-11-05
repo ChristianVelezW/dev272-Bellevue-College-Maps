@@ -1,0 +1,7 @@
+# Husky points Git at .husky/, so Git stops running .git/hooks/ on its own.
+# If this machine has its own pre-push guard in .git/hooks/, run it here.
+# Student clones have no such file, so this does nothing for them.
+guard="$(git rev-parse --git-dir)/hooks/pre-push"
+if [ -x "$guard" ]; then
+  exec "$guard" "$@"
+fi

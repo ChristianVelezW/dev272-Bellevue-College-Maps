@@ -1,0 +1,11 @@
+{
+    "recommendations": [
+        "expo.vscode-expo-tools",
+        "esbenp.prettier-vscode",
+        "rvest.vs-code-prettier-eslint",
+        "yoavbls.pretty-ts-errors",
+        "dbaeumer.vscode-eslint",
+        "orta.vscode-jest",
+        "vespa-dev-works.jestrunit"
+    ]
+}
