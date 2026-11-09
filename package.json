@@ -1,7 +1,8 @@
 {
-  "name": "dev-272-fall-26-template",
+  "name": "BC Maps",
   "main": "expo-router/entry",
   "version": "1.0.0",
+  "description": "Interactive Bellevue College campus map and navigation app.",
   "dependencies": {
     "@expo/ui": "~57.0.25",
     "expo": "~57.0.30",

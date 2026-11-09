@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "dev-272-fall-26-template",
-    "slug": "dev-272-fall-26-template",
+    "name": "BC Maps",
+    "slug": "bc-Maps",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
