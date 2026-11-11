@@ -1,8 +1,8 @@
-## Project: [Insert Project Name]
+## Project: BC Maps
 
 **Platform:** React Native with Expo  
 **Timeline:** 6 Weeks  
-**Team Members:** [List team roles/names]
+**Team Members:** sa-lem666: Project Manager + UI/UX, ChristianVelezW: QA Engineer + Backend/Frontend Help, Z-eyob-Job: Frontend + Backend, TheAndyAndroid: UI/UX, Frontend
 
 ---
 
@@ -10,7 +10,7 @@
 
 This project aims to develop a proof-of-concept mobile application using React Native and Expo. The goal is to demonstrate key functionality, technical feasibility, and user experience for a targeted use case.
 
-[Add another overview paragraph specific to your mobile application project]
+Our main goal is to build something that is useful to Bellevue College students and visitors. We will focus on making location searches straightforward, keeping the interface easy to understand, and testing the app to make sure it works as expected. As development progresses, we plan to improve the app based on feedback and the issues we discover along the way.
 
 ---
 
@@ -21,7 +21,7 @@ This project aims to develop a proof-of-concept mobile application using React N
 ### Required Features
 
 - Navigation
-- 4 Screens
+- 4 Screens (at least)
 - 2 Forms with validation
 - Remote data storage
 - Data fetching
@@ -50,13 +50,14 @@ This project aims to develop a proof-of-concept mobile application using React N
 
 ### Week 2: [Overall goal/focus for week 2]
 
-- [List out specific focus areas / minor tasks]
+- Create each screen with basic UI/UX and functionality (Home, Search, Profile, Building Details, Navigate, Save, Report Issue)
 
 **Deliverables:**
 
-- [Deliverable 1] – [Assigned person]
-- [Deliverable 2] – [Assigned person]
-- [Deliverable 3] – [Assigned person]
+- Core Screen Creation – Eyob, Christian
+- Functional Navigation – Andrew, Salem
+- Basic UI - Eyob
+- Data Implementation/ Research – Salem
 
 ### Week 3: [Overall goal/focus for week 3]
 
@@ -106,9 +107,9 @@ This project aims to develop a proof-of-concept mobile application using React N
 
 ## Success Criteria
 
-- [Success Criterion 1]
-- [Success Criterion 2]
-- [Success Criterion 3]
+- Accurately navigates user to building
+- Gives some instruction/markers to find desired classroom
+- Interface aids to the physical and mobile navigation
 - [Success Criterion 4]
 - [Success Criterion 5]
 
@@ -121,6 +122,9 @@ This project aims to develop a proof-of-concept mobile application using React N
 
 - **React Native / Expo** – Mobile development
 - **GitHub Projects** – Task management
+- **AI** - Claude or other agents for limited assistance
+- **Figma** - Wireframes, UI
+- **Playwright** - Testing
 - [Add tools and libraries you intend to use for this project]
 
 ---
@@ -128,11 +132,11 @@ This project aims to develop a proof-of-concept mobile application using React N
 ## Sprint Planning & Team Meetings
 
 - **Sprint Duration:** 1 Week
-- **Kickoff Meeting:** Every [Pick a day of week] – Plan sprint goals, assign tasks, review feedback from previous week.
+- **Kickoff Meeting:** Every Saturday – Plan sprint goals, assign tasks, review feedback from previous week.
 - **Stand-Up Meetings:** 15-minute daily check-ins to share progress, blockers, and updates.
-  - [List details about how your team will conduct their daily standup] (async, in-person, Discord)
+  - Use Discord to check-in and make sure each team member has a clear plan to complete their work. Will clear up any confusion or obstacles that may come up. (async, in-person, Discord)
 - **Midweek Sync:** Optional working session/check-in to support collaboration.
-- **Sprint Review & Retrospective:** Every [Pick a day of week] – Demo completed features, gather feedback, and identify improvements for next sprint.
+- **Sprint Review & Retrospective:** Every Tuesday – Demo completed features, gather feedback, and identify improvements for next sprint.
 
 **Task Management:**  
 All tasks tracked using GitHub Projects. Tasks are assigned with clear descriptions, deadlines, and review requirements.
@@ -146,38 +150,38 @@ Teams are encouraged to use Slack, Discord, or similar tools for real-time commu
 
 ### Project Manager – Oversees timeline and deliverables
 
-- [Primary Student's name]
-- [Secondary Student's name]
+- Salem
+- Christian
 
 ### Frontend Developer(s) – UI implementation and styling
 
-- [Primary Student's name]
-- [Secondary Student's name]
+- Eyob
+- Andrew
 
 ### Backend Integrator – API and state management
 
-- [Primary Student's name]
-- [Secondary Student's name]
+- Eyob
+- Christian
 
 ### QA/Tester – Testing, bug tracking, and CI
 
-- [Primary Student's name]
-- [Secondary Student's name]
+- Christian
+- Salem
 
 ### UI/UX Designer – Wireframes, prototypes, and polish
 
-- [Primary Student's name]
-- [Secondary Student's name]
+- Andrew
+- Salem
 
 ---
 
 ## Version Control Workflow (Required)
 
 - **Main Branch:** Stable releases
-  - [linkto](githublink)
+  - https://github.com/ChristianVelezW/dev272-Bellevue-College-Maps/tree/main 
 
 - **Dev Branch:** Ongoing development
-  - [linkto](githublink)
+  - https://github.com/ChristianVelezW/dev272-Bellevue-College-Maps/tree/develop
 
 - **Feature Branches:** One per task/feature
 
