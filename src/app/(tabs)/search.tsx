@@ -1,7 +1,7 @@
 // Bare-bones functional screen (search/filter state, dynamic [id] lookup, and route params).
 // Styled with minimal StyleSheet shells so UI polish can be layered in without altering logic.
 // Note: `as unknown as Href` on /navigate/[roomId] can be simplified once navigation routes merge.
-import { Href, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
   Pressable,
@@ -126,7 +126,7 @@ export default function SearchScreen() {
                   router.push({
                     pathname: "/building/[id]",
                     params: { id: room.buildingId },
-                  } as unknown as unknown as Href)
+                  })
                 }
               />
             ))
@@ -151,7 +151,7 @@ export default function SearchScreen() {
                   router.push({
                     pathname: "/building/[id]",
                     params: { id: building.id },
-                  } as unknown as Href)
+                  })
                 }
               />
             ))

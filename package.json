@@ -5,6 +5,7 @@
   "description": "Interactive Bellevue College campus map and navigation app.",
   "dependencies": {
     "@expo/ui": "~57.0.25",
+    "@expo/vector-icons": "^15.1.1",
     "expo": "~57.0.30",
     "expo-constants": "~57.0.22",
     "expo-device": "~57.0.2",
