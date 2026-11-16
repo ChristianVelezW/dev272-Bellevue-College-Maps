@@ -122,7 +122,7 @@ function BuildingContent({ building }: { building: CampusBuilding }) {
   const roomsOnFloor = building.rooms.filter(
     (room) => room.floor === activeFloor,
   );
-  const primaryRoom = roomsOnFloor[0] ?? building.rooms[0];
+  const primaryRoom = roomsOnFloor[0];
   const navigateToRoom = (roomId: string) =>
     router.push({ pathname: "/navigate/[roomId]", params: { roomId } });
 
@@ -198,7 +198,7 @@ function BuildingContent({ building }: { building: CampusBuilding }) {
             label={
               activeFloor === undefined
                 ? "Floor plan unavailable"
-                : `Floor plan · Floor ${activeFloor}`
+                : `Floor plan · Floor ${activeFloor}${roomsOnFloor[0] ? ` (room ${roomsOnFloor[0].number.replace(`${building.code}-`, "")} highlighted)` : ""}`
             }
           />
           <Text style={styles.sectionLabel} accessibilityRole="header">

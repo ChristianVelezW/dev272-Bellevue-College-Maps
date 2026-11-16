@@ -36,7 +36,9 @@ test("shows the requested building and changes the plan, rooms, and destination 
   await fireEvent.press(screen.getByRole("tab", { name: "Floor 2" }));
 
   expect(screen.getByRole("tab", { name: "Floor 2" })).toBeSelected();
-  expect(screen.getByText("Floor plan · Floor 2")).toBeOnTheScreen();
+  expect(
+    screen.getByText("Floor plan · Floor 2 (room 201 highlighted)"),
+  ).toBeOnTheScreen();
   expect(screen.getByText("ROOMS ON FLOOR 2")).toBeOnTheScreen();
   expect(screen.getByText("L-201 · Classroom")).toBeOnTheScreen();
   expect(screen.getByText("L-225 · Faculty Office")).toBeOnTheScreen();
@@ -86,9 +88,20 @@ test("handles an empty floor and updates to a floor with rooms", async () => {
   mockParams = { id: "N" };
   await render(<BuildingDetailScreen />);
   expect(screen.getByText("No rooms listed on Floor 1.")).toBeOnTheScreen();
+  expect(screen.getByText("Floor plan · Floor 1")).toBeOnTheScreen();
+  expect(screen.queryByRole("button", { name: /^Directions to / })).toBeNull();
   await fireEvent.press(screen.getByRole("tab", { name: "Floor 2" }));
   expect(screen.getByText("N-201 · Computer Science Lab")).toBeOnTheScreen();
   expect(screen.queryByText("No rooms listed on Floor 1.")).toBeNull();
+  expect(
+    screen.getByText("Floor plan · Floor 2 (room 201 highlighted)"),
+  ).toBeOnTheScreen();
+  expect(
+    screen.getByRole("button", { name: "Directions to N-201" }),
+  ).toBeOnTheScreen();
+  await fireEvent.press(screen.getByRole("tab", { name: "Floor 1" }));
+  expect(screen.getByText("Floor plan · Floor 1")).toBeOnTheScreen();
+  expect(screen.queryByRole("button", { name: /^Directions to / })).toBeNull();
 });
 
 test("resets the selected floor when the building route changes", async () => {
