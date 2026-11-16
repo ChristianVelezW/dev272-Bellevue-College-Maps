@@ -4,10 +4,7 @@ export default function RootLayout() {
   return (
     <Stack>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen
-        name="building/[id]"
-        options={{ title: "Building Details" }}
-      />
+      <Stack.Screen name="building/[id]" options={{ title: "Building" }} />
       <Stack.Screen
         name="navigate/[roomId]"
         options={{ title: "Directions" }}
