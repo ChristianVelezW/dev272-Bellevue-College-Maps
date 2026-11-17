@@ -37,7 +37,10 @@ function Placeholder({
 }
 
 export default function BuildingDetailScreen() {
-  const { id } = useLocalSearchParams<{ id?: string | string[] }>();
+  const { id, floor } = useLocalSearchParams<{
+    id?: string | string[];
+    floor?: string | string[];
+  }>();
   const router = useRouter();
   const buildingId = Array.isArray(id) ? id[0] : id;
   const building = buildingId ? getBuildingById(buildingId) : undefined;
@@ -84,7 +87,11 @@ export default function BuildingDetailScreen() {
         }}
       />
       {building ? (
-        <BuildingContent key={building.id} building={building} />
+        <BuildingContent
+          key={`${building.id}-${floor}`}
+          building={building}
+          initialFloor={Number(Array.isArray(floor) ? floor[0] : floor) || 1}
+        />
       ) : (
         <View style={styles.fallbackContainer}>
           <View style={styles.letterBadge}>
@@ -112,10 +119,20 @@ export default function BuildingDetailScreen() {
   );
 }
 
-function BuildingContent({ building }: { building: CampusBuilding }) {
+function BuildingContent({
+  building,
+  initialFloor,
+}: {
+  building: CampusBuilding;
+  initialFloor?: number;
+}) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [selectedFloor, setSelectedFloor] = useState(1);
+  const [selectedFloor, setSelectedFloor] = useState(
+    building.floors.includes(initialFloor ?? 1)
+      ? (initialFloor ?? 1)
+      : building.floors[0],
+  );
   const activeFloor = building.floors.includes(selectedFloor)
     ? selectedFloor
     : building.floors[0];
