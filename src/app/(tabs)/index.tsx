@@ -1,6 +1,7 @@
 import { Filter } from "@/components/Filter";
 import { useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type MapFilter =
   | "All"
@@ -23,9 +24,10 @@ const MAP_FILTERS: MapFilter[] = [
 
 export default function MapScreen() {
   const [activeFilter, setActiveFilter] = useState<MapFilter>("All");
+  const insets = useSafeAreaInsets();
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <Text style={styles.title}>BC Maps</Text>
       <ScrollView
         horizontal
@@ -54,7 +56,8 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
   },
   title: {
     fontSize: 20,
