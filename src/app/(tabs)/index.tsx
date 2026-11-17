@@ -1,11 +1,11 @@
 import { StyleSheet, Text, View } from "react-native";
+import { colors } from "../../constants/colors";
 
 export default function MapScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>BC Maps</Text>
-      <View>
-        <Text>Map Coming Soon!</Text>
+      <View style={[StyleSheet.absoluteFill, styles.mapLayer]}>
+        <Text style={styles.placeholder}>Campus map coming soon</Text>
       </View>
     </View>
   );
@@ -14,11 +14,15 @@ export default function MapScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.tint,
+  },
+  mapLayer: {
+    backgroundColor: colors.tint,
     alignItems: "center",
     justifyContent: "center",
   },
-  title: {
-    fontSize: 20,
-    fontWeight: "600",
+  placeholder: {
+    fontSize: 14,
+    color: colors.secondaryText,
   },
 });
