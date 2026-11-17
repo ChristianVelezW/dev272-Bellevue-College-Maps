@@ -161,6 +161,11 @@ export const CAMPUS_BUILDINGS: CampusBuilding[] = [
   },
 ];
 
+export const SAVED_PLACES = [
+  { id: 1, buildingId: "D", roomId: "D-101" },
+  { id: 2, buildingId: "L", roomId: "L-302" },
+];
+
 export function getBuildingById(id: string): CampusBuilding | undefined {
   return CAMPUS_BUILDINGS.find(
     (building) => building.id.toLowerCase() === id.toLowerCase(),
