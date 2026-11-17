@@ -1,9 +1,47 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Filter } from "@/components/Filter";
+import { useState } from "react";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+
+type MapFilter =
+  | "All"
+  | "Buildings"
+  | "Rooms"
+  | "Food"
+  | "Accessible"
+  | "Parking"
+  | "Bathrooms";
+
+const MAP_FILTERS: MapFilter[] = [
+  "All",
+  "Buildings",
+  "Rooms",
+  "Food",
+  "Accessible",
+  "Parking",
+  "Bathrooms",
+];
 
 export default function MapScreen() {
+  const [activeFilter, setActiveFilter] = useState<MapFilter>("All");
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>BC Maps</Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.filterRow}
+      >
+        {MAP_FILTERS.map((filter) => (
+          <Filter
+            key={filter}
+            label={filter}
+            isSelected={activeFilter === filter}
+            onPress={() => setActiveFilter(filter)}
+          />
+        ))}
+      </ScrollView>
+
       <View>
         <Text>Map Coming Soon!</Text>
       </View>
@@ -16,9 +54,15 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    padding: 16,
   },
   title: {
     fontSize: 20,
     fontWeight: "600",
+  },
+  filterRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
   },
 });

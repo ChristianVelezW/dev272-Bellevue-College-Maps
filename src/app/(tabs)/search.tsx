@@ -1,16 +1,10 @@
 // Bare-bones functional screen (search/filter state, dynamic [id] lookup, and route params).
 // Styled with minimal StyleSheet shells so UI polish can be layered in without altering logic.
 // Note: `as unknown as Href` on /navigate/[roomId] can be simplified once navigation routes merge.
+import { Filter } from "@/components/Filter";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { LocationRow } from "../../components/LocationRow";
 import { CAMPUS_BUILDINGS } from "../../data/buildings";
 
@@ -88,23 +82,12 @@ export default function SearchScreen() {
 
       <View style={styles.filterRow}>
         {FILTER_OPTIONS.map((option) => (
-          <Pressable
+          <Filter
             key={option}
-            style={[
-              styles.filterChip,
-              activeFilter === option && styles.filterChipActive,
-            ]}
+            label={option}
+            isSelected={activeFilter === option}
             onPress={() => setActiveFilter(option)}
-          >
-            <Text
-              style={[
-                styles.filterText,
-                activeFilter === option && styles.filterTextActive,
-              ]}
-            >
-              {option}
-            </Text>
-          </Pressable>
+          />
         ))}
       </View>
 
