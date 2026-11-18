@@ -86,9 +86,4 @@ const styles = StyleSheet.create({
     height: 48,
     marginBottom: 16,
   },
-  filterRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
 });

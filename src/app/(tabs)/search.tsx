@@ -90,33 +90,25 @@ export default function SearchScreen() {
     activeFilter === "Accessible";
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.heading}>Search Campus</Text>
-
-      <TextInput
-        style={styles.input}
-        placeholder="Search building or room (e.g. L-201)"
-        value={query}
-        onChangeText={setQuery}
-        autoCapitalize="none"
-        autoCorrect={false}
-      />
-
-      <View style={styles.filterRow}>
-        {FILTER_OPTIONS.map((option) => (
-          <Filter
-            key={option}
-            label={option}
-            isSelected={activeFilter === option}
-            onPress={() => setActiveFilter(option)}
-          />
-        ))}
-      </View>
-
-      {showRooms ? (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            ROOMS ({matchingRooms.length})
+    <View
+      style={[
+        styles.screen,
+        {
+          paddingTop: insets.top,
+          paddingLeft: insets.left,
+          paddingRight: insets.right,
+        },
+      ]}
+    >
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        automaticallyAdjustKeyboardInsets
+      >
+        <View style={styles.header}>
+          <Text accessibilityRole="header" style={styles.heading}>
+            Search
           </Text>
         </View>
 
