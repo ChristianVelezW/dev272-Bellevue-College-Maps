@@ -3,9 +3,10 @@ import { fireEvent, render, screen } from "@testing-library/react-native";
 import Index from "@/app/(tabs)/index";
 
 const mockNavigate = jest.fn();
+const mockPush = jest.fn();
 
 jest.mock("expo-router", () => ({
-  useRouter: () => ({ navigate: mockNavigate }),
+  useRouter: () => ({ navigate: mockNavigate, push: mockPush }),
 }));
 
 jest.mock("react-native-safe-area-context", () => ({
@@ -31,4 +32,20 @@ test("opens the Search tab when the map search bar is pressed", async () => {
   );
 
   expect(mockNavigate).toHaveBeenCalledWith("/search");
+});
+
+test("shows the D Building summary and opens its details", async () => {
+  await render(<Index />);
+
+  expect(
+    screen.getByText("D Building (Library Media Center)"),
+  ).toBeOnTheScreen();
+  expect(screen.getByText("Library · 2 floors · 2 min walk")).toBeOnTheScreen();
+
+  await fireEvent.press(screen.getByRole("button", { name: "Details" }));
+
+  expect(mockPush).toHaveBeenCalledWith({
+    pathname: "/building/[id]",
+    params: { id: "D" },
+  });
 });

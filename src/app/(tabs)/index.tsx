@@ -3,10 +3,12 @@ import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../../constants/colors";
+import { getBuildingById } from "../../data/buildings";
 
 export default function MapScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const building = getBuildingById("D");
 
   return (
     <View style={styles.container}>
@@ -19,10 +21,7 @@ export default function MapScreen() {
           accessibilityLabel="Search building or room"
           accessibilityHint="Opens the Search tab"
           onPress={() => router.navigate("/search")}
-          style={({ pressed }) => [
-            styles.searchBar,
-            pressed && styles.searchBarPressed,
-          ]}
+          style={({ pressed }) => [styles.searchBar, pressed && styles.pressed]}
         >
           <View
             style={styles.searchIcon}
@@ -40,6 +39,41 @@ export default function MapScreen() {
           </Text>
         </Pressable>
       </View>
+      {building ? (
+        <View style={styles.buildingCard}>
+          <View style={styles.cardHandle} />
+          <View style={styles.buildingSummary}>
+            <View style={styles.buildingTile}>
+              <Text style={styles.buildingCode}>{building.code}</Text>
+            </View>
+            <View style={styles.buildingText}>
+              <Text style={styles.buildingName} numberOfLines={1}>
+                {building.name}
+              </Text>
+              <Text style={styles.buildingSubtitle}>
+                {`${building.category} · ${building.floors.length} ${building.floors.length === 1 ? "floor" : "floors"} · ${building.walkTime}`}
+              </Text>
+            </View>
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Details"
+            accessibilityHint="Opens the building details"
+            onPress={() =>
+              router.push({
+                pathname: "/building/[id]",
+                params: { id: building.id },
+              })
+            }
+            style={({ pressed }) => [
+              styles.detailsButton,
+              pressed && styles.pressed,
+            ]}
+          >
+            <Text style={styles.detailsText}>Details</Text>
+          </Pressable>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -47,7 +81,6 @@ export default function MapScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.tint,
   },
   mapLayer: {
     backgroundColor: colors.tint,
@@ -76,7 +109,7 @@ const styles = StyleSheet.create({
     borderColor: colors.tintBorder,
     borderRadius: 12,
   },
-  searchBarPressed: {
+  pressed: {
     opacity: 0.7,
   },
   searchIcon: {
@@ -86,13 +119,79 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   searchIconImage: {
-    width: 14.7917,
-    height: 14.7917,
+    width: 15,
+    height: 15,
   },
   searchText: {
     flex: 1,
     fontSize: 16,
-    fontWeight: "400",
     color: colors.gray,
+  },
+  buildingCard: {
+    position: "absolute",
+    bottom: 12,
+    left: 12,
+    right: 12,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.tintBorder,
+    borderRadius: 16,
+    paddingTop: 10,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    gap: 14,
+  },
+  cardHandle: {
+    alignSelf: "center",
+    width: 36,
+    height: 4,
+    backgroundColor: colors.tintBorder,
+    borderRadius: 2,
+  },
+  buildingSummary: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  buildingTile: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: colors.brand,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  buildingCode: {
+    color: colors.white,
+    fontSize: 19,
+    fontWeight: "700",
+  },
+  buildingText: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  buildingName: {
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  buildingSubtitle: {
+    color: colors.secondaryText,
+    fontSize: 14,
+  },
+  detailsButton: {
+    height: 48,
+    borderRadius: 26,
+    backgroundColor: colors.white,
+    borderWidth: 2,
+    borderColor: colors.brand,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  detailsText: {
+    color: colors.brand,
+    fontSize: 17,
+    fontWeight: "600",
   },
 });
