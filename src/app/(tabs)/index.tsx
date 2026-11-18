@@ -1,13 +1,25 @@
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../../constants/colors";
 import { getBuildingById } from "../../data/buildings";
+import { Filter } from "../../components/Filter";
+
+type MapFilter = "Library" | "Food" | "Restrooms" | "Parking";
+
+const MAP_FILTER_OPTIONS: MapFilter[] = [
+  "Library",
+  "Food",
+  "Restrooms",
+  "Parking",
+];
 
 export default function MapScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const [activeFilter, setActiveFilter] = useState<MapFilter>("Library");
   const building = getBuildingById("D");
 
   return (
@@ -38,6 +50,21 @@ export default function MapScreen() {
             Search building or room
           </Text>
         </Pressable>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.filterScroll}
+          contentContainerStyle={styles.filterRow}
+        >
+          {MAP_FILTER_OPTIONS.map((option) => (
+            <Filter
+              key={option}
+              label={option}
+              isSelected={activeFilter === option}
+              onPress={() => setActiveFilter(option)}
+            />
+          ))}
+        </ScrollView>
       </View>
       {building ? (
         <View style={styles.buildingCard}>
@@ -108,6 +135,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.tintBorder,
     borderRadius: 12,
+  },
+  filterScroll: {
+    flexGrow: 0,
+    marginTop: 12,
+  },
+  filterRow: {
+    flexDirection: "row",
+    gap: 8,
   },
   pressed: {
     opacity: 0.7,

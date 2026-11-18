@@ -49,3 +49,16 @@ test("shows the D Building summary and opens its details", async () => {
     params: { id: "D" },
   });
 });
+
+test("starts with Library selected and switches the placeholder filter to Food", async () => {
+  await render(<Index />);
+
+  const library = screen.getByRole("button", { name: "Library, filter" });
+  const food = screen.getByRole("button", { name: "Food, filter" });
+  expect(library).toBeSelected();
+
+  await fireEvent.press(food);
+
+  expect(food).toBeSelected();
+  expect(library).not.toBeSelected();
+});
