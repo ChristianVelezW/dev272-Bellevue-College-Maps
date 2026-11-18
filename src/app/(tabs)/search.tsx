@@ -1,16 +1,10 @@
 // Bare-bones functional screen (search/filter state, dynamic [id] lookup, and route params).
 // Styled with minimal StyleSheet shells so UI polish can be layered in without altering logic.
 // Note: `as unknown as Href` on /navigate/[roomId] can be simplified once navigation routes merge.
+import { Filter } from "@/components/Filter";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { LocationRow } from "../../components/LocationRow";
 import { CAMPUS_BUILDINGS } from "../../data/buildings";
 
@@ -84,27 +78,22 @@ export default function SearchScreen() {
         onChangeText={setQuery}
         autoCapitalize="none"
         autoCorrect={false}
+        accessibilityLabel="Search building or room"
+        accessibilityHint="Filters the list of classrooms and buildings as you type"
       />
 
-      <View style={styles.filterRow}>
+      <View
+        style={styles.filterRow}
+        accessibilityRole="radiogroup"
+        accessibilityLabel="Filter results by category"
+      >
         {FILTER_OPTIONS.map((option) => (
-          <Pressable
+          <Filter
             key={option}
-            style={[
-              styles.filterChip,
-              activeFilter === option && styles.filterChipActive,
-            ]}
+            label={option}
+            isSelected={activeFilter === option}
             onPress={() => setActiveFilter(option)}
-          >
-            <Text
-              style={[
-                styles.filterText,
-                activeFilter === option && styles.filterTextActive,
-              ]}
-            >
-              {option}
-            </Text>
-          </Pressable>
+          />
         ))}
       </View>
 
@@ -183,25 +172,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
-  },
-  filterChip: {
-    borderWidth: 1,
-    borderColor: "#9ca3af",
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  filterChipActive: {
-    backgroundColor: "#111827",
-    borderColor: "#111827",
-  },
-  filterText: {
-    fontSize: 13,
-    color: "#111827",
-  },
-  filterTextActive: {
-    color: "#ffffff",
-    fontWeight: "600",
   },
   section: {
     marginTop: 8,
