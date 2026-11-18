@@ -37,7 +37,7 @@ export default function ReportIssue() {
       </View>
 
       <Text style={styles.title}>Report an Issue</Text>
-      <Text> PlacerHolder </Text>
+      <Text>Report an Issue form coming next sprint</Text>
       <Pressable style={styles.button} onPress={() => router.back()}>
         <Text>Cancel</Text>
       </Pressable>

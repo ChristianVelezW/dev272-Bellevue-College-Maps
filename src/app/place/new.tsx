@@ -4,8 +4,8 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 export default function SavePlace() {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Report an Issue</Text>
-      <Text> PlacerHolder </Text>
+      <Text style={styles.title}>Save a Place</Text>
+      <Text>Save a Place Form coming next sprint</Text>
       <Pressable style={styles.button} onPress={() => router.back()}>
         <Text>Cancel</Text>
       </Pressable>
