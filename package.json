@@ -1,9 +1,11 @@
 {
-  "name": "dev-272-fall-26-template",
+  "name": "BC Maps",
   "main": "expo-router/entry",
   "version": "1.0.0",
+  "description": "Interactive Bellevue College campus map and navigation app.",
   "dependencies": {
     "@expo/ui": "~57.0.25",
+    "@expo/vector-icons": "^15.1.1",
     "expo": "~57.0.30",
     "expo-constants": "~57.0.22",
     "expo-device": "~57.0.2",
@@ -57,7 +59,7 @@
     "prepare": "husky"
   },
   "private": true,
-  "packageManager": "pnpm@11.11.0+sha512.4463f65fd80ed80d69bc1d4bf163ee94f605c7380fc318bb5b2ebe15f8cd12d49c51a4d59e951b401e764d3b6ca751cbf51bc50ed7001a6bcb4935e684c34882",
+  "packageManager": "pnpm@12.21.0",
   "jest": {
     "preset": "jest-expo",
     "setupFiles": [

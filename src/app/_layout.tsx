@@ -1,11 +1,33 @@
+import { CampusProvider } from "@/context/CampusContext";
 import { Stack } from "expo-router";
 
-// Root layout. Every screen file inside src/app/ is a route.
-// Week 3 replaces this with Stack + Tabs layouts.
 export default function RootLayout() {
   return (
-    <Stack>
-      <Stack.Screen name="index" options={{ title: "DEV 272" }} />
-    </Stack>
+    <CampusProvider>
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="building/[id]" options={{ title: "Building" }} />
+        <Stack.Screen
+          name="navigate/[roomId]"
+          options={{ title: "Directions" }}
+        />
+        <Stack.Screen
+          name="place/new"
+          options={{
+            presentation: "modal",
+            headerShown: false,
+            animation: "slide_from_bottom",
+          }}
+        />
+        <Stack.Screen
+          name="report"
+          options={{
+            presentation: "modal",
+            headerShown: false,
+            animation: "slide_from_bottom",
+          }}
+        />
+      </Stack>
+    </CampusProvider>
   );
 }
