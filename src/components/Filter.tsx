@@ -19,6 +19,9 @@ export function Filter({ label, isSelected, onPress, iconName }: FilterProps) {
       ]}
       onPress={onPress}
       activeOpacity={0.8}
+      accessibilityRole="button"
+      accessibilityState={{ selected: isSelected }}
+      accessibilityLabel={`${label}, filter`}
     >
       {iconName && (
         <Ionicons
@@ -47,7 +50,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
-    marginRight: 8,
     borderWidth: 1,
   },
   tagSelected: {

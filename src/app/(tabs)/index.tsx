@@ -29,22 +29,25 @@ export default function MapScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <Text style={styles.title}>BC Maps</Text>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filterRow}
-      >
-        {MAP_FILTERS.map((filter) => (
-          <Filter
-            key={filter}
-            label={filter}
-            isSelected={activeFilter === filter}
-            onPress={() => setActiveFilter(filter)}
-          />
-        ))}
-      </ScrollView>
+      <View style={styles.filterContainer}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterRow}
+          style={styles.filterScrollView}
+        >
+          {MAP_FILTERS.map((filter) => (
+            <Filter
+              key={filter}
+              label={filter}
+              isSelected={activeFilter === filter}
+              onPress={() => setActiveFilter(filter)}
+            />
+          ))}
+        </ScrollView>
+      </View>
 
-      <View>
+      <View style={styles.mapContainer}>
         <Text>Map Coming Soon!</Text>
       </View>
     </View>
@@ -54,6 +57,10 @@ export default function MapScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: 16,
+  },
+  mapContainer: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 16,
@@ -62,6 +69,22 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: "600",
+    marginBottom: 12,
+    textAlign: "center",
+  },
+  filterRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 4,
+  },
+  filterScrollView: {
+    flexGrow: 0,
+    flexShrink: 0,
+  },
+  filterContainer: {
+    height: 48,
+    marginBottom: 16,
   },
   filterRow: {
     flexDirection: "row",

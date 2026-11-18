@@ -6,6 +6,7 @@ type LocationRowProps = {
   title: string;
   subtitle: string;
   badge?: string;
+  accessibilityLabel?: string;
   variant?: "default" | "building";
   onPress: () => void;
 };
@@ -14,12 +15,14 @@ export function LocationRow({
   title,
   subtitle,
   badge,
+  accessibilityLabel,
   variant = "default",
   onPress,
 }: LocationRowProps) {
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
       style={({ pressed }) => [
         variant === "building" ? styles.buildingRow : styles.row,
         pressed && styles.pressed,

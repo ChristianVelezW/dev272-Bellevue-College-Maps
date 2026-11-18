@@ -76,8 +76,16 @@ const styles = StyleSheet.create({
   },
   tagRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
+    alignItems: "center",
     gap: 8,
-    marginVertical: 4,
+    paddingHorizontal: 4,
+  },
+  tagContainer: {
+    height: 48,
+    justifyContent: "center",
+  },
+  tagScrollView: {
+    flexGrow: 0,
+    flexShrink: 0,
   },
 });
