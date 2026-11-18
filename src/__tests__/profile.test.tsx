@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react-native";
 import ProfileScreen from "../app/(tabs)/profile";
+import { CampusProvider } from "../context/CampusContext";
 
 const mockPush = jest.fn();
 
@@ -15,7 +16,11 @@ beforeEach(() => {
 
 describe("Profile Screen", () => {
   test("displays the profile page and all section headers", async () => {
-    await render(<ProfileScreen />);
+    await render(
+      <CampusProvider>
+        <ProfileScreen />
+      </CampusProvider>,
+    );
 
     expect(screen.getByText("Profile")).toBeOnTheScreen();
     expect(screen.getByText("SAVED PLACES")).toBeOnTheScreen();
@@ -24,7 +29,11 @@ describe("Profile Screen", () => {
   });
 
   test("opens the correct building and floor when a saved place is selected", async () => {
-    await render(<ProfileScreen />);
+    await render(
+      <CampusProvider>
+        <ProfileScreen />
+      </CampusProvider>,
+    );
 
     await fireEvent.press(screen.getByText("Quiet Study Room"));
 
@@ -38,19 +47,31 @@ describe("Profile Screen", () => {
   });
 
   test("opens the Add Place screen", async () => {
-    await render(<ProfileScreen />);
+    await render(
+      <CampusProvider>
+        <ProfileScreen />
+      </CampusProvider>,
+    );
     await fireEvent.press(screen.getByText("Add Place"));
     expect(mockPush).toHaveBeenCalledWith("/place/new");
   });
 
   test("opens the Report an Issue screen", async () => {
-    await render(<ProfileScreen />);
+    await render(
+      <CampusProvider>
+        <ProfileScreen />
+      </CampusProvider>,
+    );
     await fireEvent.press(screen.getByText("Report an Issue"));
     expect(mockPush).toHaveBeenCalledWith("/report");
   });
 
   test("allows users to change navigation settings", async () => {
-    await render(<ProfileScreen />);
+    await render(
+      <CampusProvider>
+        <ProfileScreen />
+      </CampusProvider>,
+    );
     const accessibleSwitch = screen.getByRole("switch", {
       name: "Accessible Routes Only",
     });

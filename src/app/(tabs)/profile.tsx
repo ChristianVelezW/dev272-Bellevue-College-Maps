@@ -1,6 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
-import { useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -10,18 +9,22 @@ import {
   View,
 } from "react-native";
 import { colors } from "../../constants/colors";
-import { CAMPUS_BUILDINGS, SAVED_PLACES } from "../../data/buildings";
+import { useCampus } from "../../context/CampusContext";
 
 export default function ProfileScreen() {
   const router = useRouter();
 
-  const [accessibleRoutes, setAccessibleRoutes] = useState(false);
-  const [avoidStairs, setAvoidStairs] = useState(false);
+  const {
+    buildings,
+    savedPlaces: savedPlaceRefs,
+    accessibleOnly,
+    setAccessibleOnly,
+    avoidStairs,
+    setAvoidStairs,
+  } = useCampus();
 
-  const savedPlaces = SAVED_PLACES.flatMap((place) => {
-    const building = CAMPUS_BUILDINGS.find(
-      (item) => item.id === place.buildingId,
-    );
+  const savedPlaces = savedPlaceRefs.flatMap((place) => {
+    const building = buildings.find((item) => item.id === place.buildingId);
 
     const room = building?.rooms.find((item) => item.id === place.roomId);
 
@@ -90,8 +93,8 @@ export default function ProfileScreen() {
           </View>
           <Switch
             accessibilityLabel="Accessible Routes Only"
-            value={accessibleRoutes}
-            onValueChange={setAccessibleRoutes}
+            value={accessibleOnly}
+            onValueChange={setAccessibleOnly}
             trackColor={{ false: "#646464", true: colors.brand }}
           />
         </View>
