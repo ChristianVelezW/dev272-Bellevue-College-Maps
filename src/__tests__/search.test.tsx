@@ -32,12 +32,16 @@ test("filters as you type and clears the query to restore results", async () => 
 
 test("retains category and accessibility filters and opens a room's building", async () => {
   await render(<SearchScreen />);
-  await fireEvent.press(screen.getByRole("button", { name: "Buildings" }));
+  await fireEvent.press(
+    screen.getByRole("button", { name: "Buildings, filter" }),
+  );
   expect(screen.queryByText("L-201")).toBeNull();
-  await fireEvent.press(screen.getByRole("button", { name: "Rooms" }));
+  await fireEvent.press(screen.getByRole("button", { name: "Rooms, filter" }));
   expect(screen.queryByText("BUILDINGS")).toBeNull();
   expect(screen.getByText("L-225")).toBeOnTheScreen();
-  await fireEvent.press(screen.getByRole("button", { name: "Accessible" }));
+  await fireEvent.press(
+    screen.getByRole("button", { name: "Accessible, filter" }),
+  );
   expect(screen.queryByText("L-225")).toBeNull();
   await fireEvent.press(screen.getByText("L-201"));
   expect(mockPush).toHaveBeenCalledWith({
@@ -59,12 +63,14 @@ test("remembers submitted searches once and recalls them across filters", async 
   expect(
     screen.getAllByRole("button", { name: /Search again for/i }),
   ).toHaveLength(1);
-  await fireEvent.press(screen.getByRole("button", { name: "Buildings" }));
+  await fireEvent.press(
+    screen.getByRole("button", { name: "Buildings, filter" }),
+  );
   await fireEvent.press(screen.getByRole("button", { name: "Clear search" }));
   await fireEvent.press(
     screen.getByRole("button", { name: "Search again for l-201" }),
   );
   expect(input).toHaveDisplayValue("l-201");
-  expect(screen.getByRole("button", { name: "All" })).toBeSelected();
+  expect(screen.getByRole("button", { name: "All, filter" })).toBeSelected();
   expect(screen.getByText("L-201")).toBeOnTheScreen();
 });

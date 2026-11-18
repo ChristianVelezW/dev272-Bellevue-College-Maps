@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LocationRow } from "../../components/LocationRow";
 import { colors } from "../../constants/colors";
 import { CAMPUS_BUILDINGS } from "../../data/buildings";
+import { Filter } from "../../components/Filter";
 
 type FilterOption = "All" | "Buildings" | "Rooms" | "Accessible";
 
@@ -159,25 +160,12 @@ export default function SearchScreen() {
 
           <View style={styles.filterRow}>
             {FILTER_OPTIONS.map((option) => (
-              <Pressable
+              <Filter
                 key={option}
-                accessibilityRole="button"
-                accessibilityState={{ selected: activeFilter === option }}
-                style={[
-                  styles.filterChip,
-                  activeFilter === option && styles.filterChipActive,
-                ]}
+                label={option}
+                isSelected={activeFilter === option}
                 onPress={() => setActiveFilter(option)}
-              >
-                <Text
-                  style={[
-                    styles.filterText,
-                    activeFilter === option && styles.filterTextActive,
-                  ]}
-                >
-                  {option}
-                </Text>
-              </Pressable>
+              />
             ))}
           </View>
 
@@ -335,16 +323,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 6,
   },
-  filterChipActive: {
-    backgroundColor: colors.brand,
-  },
   filterText: {
     fontSize: 14,
     fontWeight: "500",
     color: colors.text,
-  },
-  filterTextActive: {
-    color: colors.white,
   },
   section: {
     gap: 14,
