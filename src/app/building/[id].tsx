@@ -7,6 +7,7 @@ import { LocationRow } from "../../components/LocationRow";
 import { colors } from "../../constants/colors";
 import { getBuildingById } from "../../data/buildings";
 import { CampusBuilding } from "../../types/campus";
+import { PrimaryButton } from "@/components/PrimaryButton";
 
 function Placeholder({
   label,
@@ -102,17 +103,11 @@ export default function BuildingDetailScreen() {
             We couldn’t find this campus building. Go back to Search to find a
             building or room.
           </Text>
-          <Pressable
-            accessibilityRole="button"
-            style={({ pressed }) => [
-              styles.primaryButton,
-              styles.fallbackButton,
-              pressed && styles.pressed,
-            ]}
+          <PrimaryButton
+            label={"Back to Search"}
             onPress={() => router.replace("/search")}
-          >
-            <Text style={styles.primaryButtonText}>Back to Search</Text>
-          </Pressable>
+            style={styles.fallbackButton}
+          />
         </View>
       )}
     </View>
@@ -258,18 +253,11 @@ function BuildingContent({
             },
           ]}
         >
-          <Pressable
-            accessibilityRole="button"
-            style={({ pressed }) => [
-              styles.primaryButton,
-              pressed && styles.pressed,
-            ]}
+          <PrimaryButton
+            label={`Directions to ${primaryRoom.number}`}
+            iconName="navigate"
             onPress={() => navigateToRoom(primaryRoom.number)}
-          >
-            <Text style={styles.primaryButtonText}>
-              Directions to {primaryRoom.number}
-            </Text>
-          </Pressable>
+          />
         </View>
       ) : null}
     </>
