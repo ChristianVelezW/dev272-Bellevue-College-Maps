@@ -5,7 +5,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LocationRow } from "../../components/LocationRow";
 import { colors } from "../../constants/colors";
-import { getBuildingById } from "../../data/buildings";
+import { useCampus } from "../../context/CampusContext";
 import { CampusBuilding } from "../../types/campus";
 import { PrimaryButton } from "@/components/PrimaryButton";
 
@@ -44,6 +44,7 @@ export default function BuildingDetailScreen() {
   }>();
   const router = useRouter();
   const buildingId = Array.isArray(id) ? id[0] : id;
+  const { getBuildingById } = useCampus();
   const building = buildingId ? getBuildingById(buildingId) : undefined;
   const goBack = () => {
     if (router.canGoBack()) {
