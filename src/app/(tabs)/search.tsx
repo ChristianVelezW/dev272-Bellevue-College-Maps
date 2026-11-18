@@ -212,7 +212,7 @@ export default function SearchScreen() {
                     <LocationRow
                       key={building.id}
                       title={building.name}
-                      subtitle={`${building.floors.length} floors · ${building.hours}`}
+                      subtitle={`${building.floors.length} ${building.floors.length === 1 ? "floor" : "floors"} · ${building.hours}`}
                       variant="building"
                       badge={building.code}
                       onPress={() => {
