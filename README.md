@@ -79,15 +79,22 @@ Create a .env file in the root directory of the project. Add the environment var
 For our BC Maps app, the variables are reserved for backend and database configuration:
 
 ```env
-EXPO_PUBLIC_SUPABASE_URL=your_supabase_project_url
-EXPO_PUBLIC_SUPABASE_KEY=your_supabase_anon_key
+EXPO_PUBLIC_SUPABASE_URL=https://<your-project-ref>.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=<your-publishable-anon-key>
 ```
-
-*Note: We are going to be implementing the remote data using Supabase into Sprint 2
 
 The actual values should be provided through the Supabase project settings. Do not commit private keys, passwords, or other secrets to GitHub.
 
-### 3. Start the application
+### 3. Set up the Supabase database (`supabase/schema.sql`)
+
+All table definitions, Row Level Security (RLS) policies, and seed rows are stored in `supabase/schema.sql`:
+
+1. Open your project in the [Supabase Dashboard](https://supabase.com) and go to **SQL Editor → New Query**.
+2. Copy the contents of `supabase/schema.sql` and click **Run**.
+3. Verify in the **Table Editor** that `buildings`, `rooms`, `saved_places`, and `reports` exist and are populated.
+
+
+### 4. Start the application
 
 ```bash
 pnpm start
