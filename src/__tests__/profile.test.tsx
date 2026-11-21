@@ -1,6 +1,17 @@
 import { fireEvent, render, screen } from "@testing-library/react-native";
+import { getBuildings } from "@/api/building";
+import { getSavedPlaces } from "@/api/savedPlaces";
+import type { CampusBuilding, SavedPlace } from "@/types/campus";
 import ProfileScreen from "../app/(tabs)/profile";
 import { CampusProvider } from "../context/CampusContext";
+
+jest.mock("@/api/building", () => ({
+  getBuildings: jest.fn(),
+}));
+
+jest.mock("@/api/savedPlaces", () => ({
+  getSavedPlaces: jest.fn(),
+}));
 
 const mockPush = jest.fn();
 
@@ -10,8 +21,44 @@ jest.mock("expo-router", () => ({
   }),
 }));
 
+const mockBuildings: CampusBuilding[] = [
+  {
+    id: "L",
+    code: "L",
+    name: "L Building",
+    category: "Academic",
+    hours: "Open until 10:00 PM",
+    walk_time: "4 min walk",
+    floors: [1, 2, 3],
+    tags: ["Accessible entry", "Elevator", "Restrooms"],
+    rooms: [
+      {
+        id: "L-302",
+        building_id: "L",
+        number: "L-302",
+        name: "Quiet Study Room",
+        floor: 3,
+        type: "Study",
+        is_accessible: true,
+      },
+    ],
+  },
+];
+
+const mockSavedPlaces: SavedPlace[] = [
+  {
+    id: "sp-1",
+    building_id: "L",
+    room_id: "L-302",
+    label: "Quiet Study",
+    created_at: "2026-11-01T00:00:00.000Z",
+  },
+];
+
 beforeEach(() => {
   jest.clearAllMocks();
+  (getBuildings as jest.Mock).mockResolvedValue(mockBuildings);
+  (getSavedPlaces as jest.Mock).mockResolvedValue(mockSavedPlaces);
 });
 
 describe("Profile Screen", () => {
@@ -35,7 +82,7 @@ describe("Profile Screen", () => {
       </CampusProvider>,
     );
 
-    await fireEvent.press(screen.getByText("Quiet Study Room"));
+    await fireEvent.press(await screen.findByText("Quiet Study Room"));
 
     expect(mockPush).toHaveBeenCalledWith({
       pathname: "/building/[id]",
