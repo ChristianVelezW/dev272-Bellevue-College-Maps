@@ -9,7 +9,9 @@
 //   jest.mock("@react-native-async-storage/async-storage", () => mockAsyncStorage);
 //
 // After you add Supabase (fake values; your real keys stay in .env):
-//   process.env.EXPO_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
-//   process.env.EXPO_PUBLIC_SUPABASE_KEY = "sb_publishable_test";
+process.env.EXPO_PUBLIC_SUPABASE_URL =
+  process.env.EXPO_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
+process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY =
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || "placeholder-anon-key";
 
 export {};

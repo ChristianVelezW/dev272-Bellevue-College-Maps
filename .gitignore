@@ -31,7 +31,7 @@ yarn-error.*
 *.pem
 
 # local env files (the Supabase keys live here; they are never committed)
-.env
+
 .env*.local
 
 # typescript
