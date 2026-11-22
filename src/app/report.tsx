@@ -1,7 +1,8 @@
 import { Filter } from "@/components/Filter";
+import { PrimaryButton } from "@/components/PrimaryButton";
 import { router } from "expo-router";
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 type ReportFilter = "Bug" | "Feature Request" | "Wrong Information" | "Other";
 
@@ -16,31 +17,41 @@ const REPORT_FILTER: ReportFilter[] = [
 // for now it won't have much function without the form
 export default function ReportIssue() {
   const [activeFilter, setActiveFilter] = useState<ReportFilter>("Bug");
+
+  const [description] = useState<string | null>(null);
+
+  const handleSubmit = () => {};
+
   return (
     <View style={styles.container}>
-      <View style={styles.tagContainer}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tagRow}
-          style={styles.tagScrollView}
-        >
-          {REPORT_FILTER.map((category) => (
-            <Filter
-              key={category}
-              label={category}
-              isSelected={activeFilter === category}
-              onPress={() => setActiveFilter(category)}
-            />
-          ))}
-        </ScrollView>
-      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.tagRow}
+      >
+        {REPORT_FILTER.map((category) => (
+          <Filter
+            key={category}
+            label={category}
+            isSelected={activeFilter === category}
+            onPress={() => setActiveFilter(category)}
+          />
+        ))}
+      </ScrollView>
 
       <Text style={styles.title}>Report an Issue</Text>
       <Text> PlacerHolder </Text>
-      <Pressable style={styles.button} onPress={() => router.back()}>
-        <Text>Cancel</Text>
-      </Pressable>
+      <PrimaryButton
+        label="Submit Report"
+        iconName="send-outline"
+        disabled={!description?.trim()}
+        onPress={handleSubmit}
+      />
+      <PrimaryButton
+        label="Cancel"
+        variant="secondary"
+        onPress={() => router.back()}
+      />
     </View>
   );
 }

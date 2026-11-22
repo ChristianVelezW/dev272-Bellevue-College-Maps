@@ -1,14 +1,35 @@
+import { PrimaryButton } from "@/components/PrimaryButton";
 import { router } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
 
 export default function SavePlace() {
+  const [selectedRoomId] = useState<string | null>(null);
+  const [selectedBuilding] = useState<{ id: string; name: string } | null>();
+
+  const handleSave = () => {};
+
+  // Logic goes here
+  // eslint-disable-next-line no-console
+  console.log("Saved place:", {
+    roomId: selectedRoomId,
+    building: selectedBuilding,
+  });
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Report an Issue</Text>
       <Text> PlacerHolder </Text>
-      <Pressable style={styles.button} onPress={() => router.back()}>
-        <Text>Cancel</Text>
-      </Pressable>
+      <PrimaryButton
+        label="Save Place"
+        iconName="bookmark-outline"
+        disabled={!selectedRoomId}
+        onPress={handleSave}
+      />
+      <PrimaryButton
+        label="Cancel"
+        variant="secondary"
+        onPress={() => router.back()}
+      />
     </View>
   );
 }

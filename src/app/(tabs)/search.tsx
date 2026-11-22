@@ -12,7 +12,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LocationRow } from "../../components/LocationRow";
 import { colors } from "../../constants/colors";
-import { CAMPUS_BUILDINGS } from "../../data/buildings";
+import { useCampus } from "../../context/CampusContext";
 import { Filter } from "../../components/Filter";
 
 type FilterOption = "All" | "Buildings" | "Rooms" | "Accessible";
@@ -27,6 +27,7 @@ const FILTER_OPTIONS: FilterOption[] = [
 export default function SearchScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { buildings } = useCampus();
   const inputRef = useRef<TextInput>(null);
   const [query, setQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterOption>("All");
@@ -45,7 +46,7 @@ export default function SearchScreen() {
 
   const normalizedQuery = query.trim().toLowerCase();
 
-  const matchingBuildings = CAMPUS_BUILDINGS.filter((building) => {
+  const matchingBuildings = buildings.filter((building) => {
     const matchesText =
       normalizedQuery === "" ||
       building.name.toLowerCase().includes(normalizedQuery) ||
@@ -58,7 +59,7 @@ export default function SearchScreen() {
     return matchesText && matchesAccessible;
   });
 
-  const matchingRooms = CAMPUS_BUILDINGS.flatMap((building) =>
+  const matchingRooms = buildings.flatMap((building) =>
     building.rooms
       .filter((room) => {
         const matchesText =

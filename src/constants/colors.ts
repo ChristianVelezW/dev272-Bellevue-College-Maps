@@ -7,4 +7,5 @@ export const colors = {
   secondaryText: "#162F57",
   gray: "#A7A9AC",
   white: "#FFFFFF",
+  danger: "#dc2627",
 } as const;

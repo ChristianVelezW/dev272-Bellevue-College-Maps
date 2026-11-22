@@ -113,6 +113,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.tint,
     alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: 16,
+    paddingBottom: 16,
   },
   placeholder: {
     fontSize: 14,

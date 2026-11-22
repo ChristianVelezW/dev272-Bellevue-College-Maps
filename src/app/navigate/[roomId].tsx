@@ -1,5 +1,6 @@
+import { PrimaryButton } from "@/components/PrimaryButton";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 export default function NavigationScreen() {
   const { roomId } = useLocalSearchParams<{ roomId: string }>();
@@ -10,9 +11,12 @@ export default function NavigationScreen() {
       <Stack.Screen options={{ title: "Directions" }} />
       <Text style={styles.title}>Directions to {roomId}</Text>
       <Text style={styles.subTitle}>Here are the directions</Text>
-      <Pressable style={styles.button} onPress={() => router.replace("/")}>
-        <Text style={styles.buttonText}>End Route</Text>
-      </Pressable>
+      <PrimaryButton
+        label="End Route"
+        iconName="close-circle-outline"
+        variant="danger"
+        onPress={() => router.replace("/")}
+      />
     </View>
   );
 }
