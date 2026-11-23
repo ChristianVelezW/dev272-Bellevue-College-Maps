@@ -78,6 +78,13 @@ create policy "Allow public read reports"
 create policy "Allow public insert reports"
   on public.reports for insert to anon with check (true);
 
+grant usage on schema public to anon;
+
+grant select on table public.buildings to anon;
+grant select on table public.rooms to anon;
+grant select, insert, delete on table public.saved_places to anon;
+grant select, insert on table public.reports to anon;
+
 -- ==========================================
 -- Seed Data (5 Buildings, Rooms, Saved Places)
 -- ==========================================

@@ -159,7 +159,7 @@ function BuildingContent({
             <View style={styles.summaryText}>
               <Text style={styles.title}>{building.name}</Text>
               <Text style={styles.subtitle}>
-                {building.hours} · {building.walkTime}
+                {building.hours} · {building.walk_time}
               </Text>
             </View>
             <View style={styles.star}>
@@ -233,7 +233,7 @@ function BuildingContent({
                   variant="building"
                   title={`${room.number} · ${room.name}`}
                   subtitle={
-                    room.isAccessible ? `${room.type} · Accessible` : room.type
+                    room.is_accessible ? `${room.type} · Accessible` : room.type
                   }
                   badge={room.number.replace(`${building.code}-`, "")}
                   onPress={() => navigateToRoom(room.number)}
