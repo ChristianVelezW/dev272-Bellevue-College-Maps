@@ -34,6 +34,21 @@ export type Route = {
   lengthMeters: number;
 };
 
+export type Maneuver = {
+  kind:
+    | "start"
+    | "slight-left"
+    | "left"
+    | "sharp-left"
+    | "slight-right"
+    | "right"
+    | "sharp-right"
+    | "arrive";
+  atMeters: number;
+  coordinate: Coordinate;
+  text: string;
+};
+
 export type ReportCategory =
   "Bug" | "Feature Request" | "Wrong Information" | "Other";
 
