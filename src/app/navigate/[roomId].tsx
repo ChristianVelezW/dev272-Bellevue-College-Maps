@@ -1,176 +1,300 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import type { ComponentProps } from "react";
+import {
+  ActivityIndicator,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import MapView, { Marker, Polyline } from "react-native-maps";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { colors } from "@/constants/colors";
 import { useCampus } from "@/context/CampusContext";
-import Ionicons from "@expo/vector-icons/Ionicons";
-import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { Platform, ScrollView, StyleSheet, Text, View } from "react-native";
-import MapView from "react-native-maps";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { campusGraph, campusWalkways } from "@/data/campusGraph";
+import { useGuidance } from "@/hooks/useGuidance";
+import type { CampusBuilding, CampusRoom, Maneuver } from "@/types/campus";
 
-const ROUTE_STEPS = [
-  {
-    id: "1",
-    icon: "arrow-up" as const,
-    title: "Head straight",
-    description: "Continue along the main campus walkway",
-    distance: "355 ft",
-  },
-  {
-    id: "2",
-    icon: "arrow-back" as const,
-    title: "Turn left",
-    description: "Follow the path toward your building",
-    distance: "210 ft",
-  },
-  {
-    id: "3",
-    icon: "arrow-up" as const,
-    title: "Continue straight",
-    description: "Walk toward the main entrance",
-    distance: "255 ft",
-  },
-  {
-    id: "4",
-    icon: "location" as const,
-    title: "You have arrived",
-    description: "Your destination is nearby",
-    distance: "",
-  },
-];
+const maneuverIcons = {
+  start: "arrow-up",
+  "slight-left": "arrow-up-left-box",
+  left: "arrow-back",
+  "sharp-left": "return-down-back",
+  "slight-right": "arrow-up-right-box",
+  right: "arrow-forward",
+  "sharp-right": "return-down-forward",
+  arrive: "location",
+} satisfies Record<Maneuver["kind"], ComponentProps<typeof Ionicons>["name"]>;
+
+const entrances = [...campusGraph.nodes.values()].filter(
+  (node) => node.entrance,
+);
+
+function feet(meters: number) {
+  return `${Math.round(meters * 3.281)} ft`;
+}
+
+function findDestination(
+  buildings: CampusBuilding[],
+  roomId: string | undefined,
+) {
+  const key = roomId?.trim().toLowerCase();
+  if (!key) return;
+  for (const building of buildings) {
+    const room = building.rooms.find(
+      (candidate) =>
+        candidate.id.toLowerCase() === key ||
+        candidate.number.toLowerCase() === key,
+    );
+    if (room) return { building, room };
+  }
+}
 
 export default function NavigationScreen() {
-  const { roomId } = useLocalSearchParams<{ roomId: string | string[] }>();
+  const { roomId } = useLocalSearchParams<{ roomId?: string | string[] }>();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
-  const { buildings } = useCampus();
-  const destination = Array.isArray(roomId) ? roomId[0] : roomId;
-  const building = buildings.find((item) =>
-    item.rooms.some(
-      (room) => room.number.toLowerCase() === destination?.toLowerCase(),
-    ),
+  const { buildings, isLoading, error, refreshCampusData, avoidStairs } =
+    useCampus();
+  const destination = findDestination(
+    buildings,
+    Array.isArray(roomId) ? roomId[0] : roomId,
   );
-  const room = building?.rooms.find(
-    (item) => item.number.toLowerCase() === destination?.toLowerCase(),
-  );
-  const destinationName = room
-    ? `${room.number}`
-    : destination || "Unknown Location";
-
-  const estimatedTime = "4 min";
-  const totalDistance = "820 ft";
-  const arrivalTime = "10:09 AM";
-
-  const accessibilityOptions = ["Accessible Route", "No Stairs"];
 
   return (
     <View style={styles.container}>
       <Stack.Screen
         options={{
-          title: `Directions to ${destination || "Unknown Location"}`,
+          title: destination
+            ? `Directions to ${destination.room.number}`
+            : "Directions",
           headerTitleAlign: "center",
           headerTitleStyle: {
             color: colors.text,
             fontSize: 18,
             fontWeight: "600",
           },
-          headerStyle: {
-            backgroundColor: colors.white,
-          },
+          headerStyle: { backgroundColor: colors.white },
           headerShadowVisible: false,
           headerTintColor: colors.brand,
         }}
       />
+      {destination ? (
+        <RoomGuidance {...destination} avoidStairs={avoidStairs} />
+      ) : (
+        <View style={styles.fallback}>
+          {isLoading && <ActivityIndicator color={colors.brand} />}
+          <Text style={styles.sectionTitle}>
+            {isLoading
+              ? "Loading room…"
+              : error
+                ? "Couldn’t load campus rooms"
+                : "Room not found"}
+          </Text>
+          {!isLoading &&
+            (error ? (
+              <PrimaryButton label="Try again" onPress={refreshCampusData} />
+            ) : (
+              <PrimaryButton
+                label="Back to Search"
+                onPress={() => router.replace("/search")}
+              />
+            ))}
+        </View>
+      )}
+    </View>
+  );
+}
 
+function RoomGuidance({
+  building,
+  room,
+  avoidStairs,
+}: {
+  building: CampusBuilding;
+  room: CampusRoom;
+  avoidStairs: boolean;
+}) {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { status, permission, route, maneuvers, progress } = useGuidance(
+    campusGraph,
+    building.id,
+    building.name,
+    avoidStairs,
+  );
+  const coordinates = route?.coordinates ?? [];
+  const walked =
+    progress && progress.walkedMeters > 0
+      ? [...coordinates.slice(0, progress.splitIndex + 1), progress.splitPoint]
+      : [];
+  const remaining =
+    progress && progress.remainingMeters > 0
+      ? [progress.splitPoint, ...coordinates.slice(progress.splitIndex + 1)]
+      : [];
+  const entrance =
+    coordinates[coordinates.length - 1] ??
+    entrances.find(
+      (node) =>
+        node.entrance?.buildingId === building.id &&
+        (!avoidStairs || node.entrance.accessible),
+    )?.coordinate;
+
+  const next = progress?.nextManeuver;
+  const showTurn = status === "guiding" && next != null;
+  const statusMessages = {
+    asking: "Allow location access to start directions.",
+    locating: "Finding your location…",
+    denied:
+      "Location permission denied. Allow location in Settings to start directions.",
+    "location-unavailable": "Location unavailable. Check Location Services.",
+    "off-campus": "You’re outside the campus paths. Move closer to a walkway.",
+    "no-route": avoidStairs
+      ? "No step-free route to this building."
+      : "No walking route to this building.",
+    rerouting: "Rerouting from your current location…",
+    arrived: `You’ve arrived at ${building.name}.`,
+    guiding: next?.text ?? "Continue to the entrance.",
+  };
+  const bannerIcon = showTurn
+    ? maneuverIcons[next.kind]
+    : status === "arrived"
+      ? "location"
+      : status === "rerouting"
+        ? "sync"
+        : "locate";
+  const remainingMeters = status === "arrived" ? 0 : progress?.remainingMeters;
+
+  return (
+    <>
       <View style={styles.mapContainer}>
         <MapView
+          testID="guidance-map"
           style={StyleSheet.absoluteFill}
+          showsUserLocation={permission === "granted"}
           initialRegion={{
-            latitude: 47.5853515,
-            longitude: -122.1482834,
-            latitudeDelta: 0.005,
-            longitudeDelta: 0.005,
+            latitude: 47.58455,
+            longitude: -122.1485,
+            latitudeDelta: 0.0026,
+            longitudeDelta: 0.0034,
           }}
-        />
-
-        <View style={styles.instructionCard}>
+        >
+          {campusWalkways.map((line, i) => (
+            <Polyline
+              key={i}
+              testID="campus-walkway"
+              coordinates={line}
+              strokeColor={colors.tintBorder}
+              strokeWidth={2}
+            />
+          ))}
+          {walked.length >= 2 && (
+            <Polyline
+              testID="walked-route"
+              coordinates={walked}
+              strokeColor={colors.gray}
+              strokeWidth={6}
+              zIndex={1}
+            />
+          )}
+          {remaining.length >= 2 && (
+            <Polyline
+              testID="remaining-route"
+              coordinates={remaining}
+              strokeColor={colors.brand}
+              strokeWidth={6}
+              zIndex={2}
+            />
+          )}
+          {entrance && (
+            <Marker
+              testID="destination-entrance"
+              coordinate={entrance}
+              title={`${building.name} entrance`}
+              anchor={{ x: 0.5, y: 0.5 }}
+            >
+              <View style={styles.marker}>
+                <Text style={styles.markerCode}>{building.code}</Text>
+              </View>
+            </Marker>
+          )}
+        </MapView>
+        <View
+          testID="turn-card"
+          style={styles.instructionCard}
+          accessibilityLiveRegion="polite"
+        >
           <View style={styles.instructionIcon}>
-            <Ionicons name="arrow-up" size={34} color={colors.white} />
+            <Ionicons name={bannerIcon} size={32} color={colors.white} />
           </View>
           <View style={styles.instructionText}>
-            <Text style={styles.instructionDistance}>120 ft</Text>
+            {showTurn && progress?.metersToNext != null && (
+              <Text style={styles.instructionDistance}>
+                {feet(progress.metersToNext)}
+              </Text>
+            )}
             <Text style={styles.instructionSubtitle}>
-              Continue along the main walkway
+              {statusMessages[status]}
             </Text>
           </View>
         </View>
+      </View>
 
-        <View
-          style={[
-            styles.bottomDrawer,
-            { paddingBottom: Math.max(insets.bottom, 12) },
-          ]}
-        >
-          <View style={styles.drawerHandle} />
-
-          <View style={styles.tripSummary}>
-            <View style={styles.tripDetails}>
-              <View style={styles.tripRow}>
-                <Text style={styles.tripValue}>{estimatedTime}</Text>
-                <Text style={styles.tripSeparator}>•</Text>
-                <Text style={styles.tripValue}>{totalDistance}</Text>
-              </View>
-
-              <View style={styles.tripRow}>
-                <Text style={styles.tripSubValue}>{arrivalTime}</Text>
-                <Text style={styles.tripSeparator}>•</Text>
-                <Text style={styles.tripSubValue} numberOfLines={1}>
-                  {destinationName}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.chipContainer}>
-              {accessibilityOptions.map((option) => (
-                <View key={option} style={styles.accessibilityChip}>
-                  <Text style={styles.accessibilityChipText}>{option}</Text>
-                </View>
-              ))}
-            </View>
+      <View
+        style={[
+          styles.bottomDrawer,
+          maneuvers.length > 0 && styles.expandedDrawer,
+          { paddingBottom: Math.max(insets.bottom, 12) },
+        ]}
+      >
+        <View style={styles.drawerHandle} />
+        <View style={styles.tripSummary}>
+          <View style={styles.tripDetails}>
+            {remainingMeters != null && (
+              <Text style={styles.tripValue}>
+                {`${Math.ceil(remainingMeters / 1.3 / 60)} min · ${feet(remainingMeters)}`}
+              </Text>
+            )}
+            <Text style={styles.tripSubValue}>
+              Room {room.number} · {building.name}
+            </Text>
           </View>
-
+          {avoidStairs && (
+            <View style={styles.accessibilityChip}>
+              <Text style={styles.accessibilityChipText}>No stairs</Text>
+            </View>
+          )}
+        </View>
+        {maneuvers.length > 0 && (
           <View style={styles.stepsSection}>
             <Text style={styles.sectionTitle}>DIRECTIONS</Text>
-            <ScrollView
-              style={styles.stepsList}
-              showsVerticalScrollIndicator={false}
-              nestedScrollEnabled
-            >
-              {ROUTE_STEPS.map((step) => (
-                <View key={step.id} style={styles.stepRow}>
+            <ScrollView style={styles.stepsList} nestedScrollEnabled>
+              {maneuvers.map((step, i) => (
+                <View key={i} style={styles.stepRow}>
                   <View style={styles.stepIconContainer}>
-                    <Ionicons name={step.icon} size={21} color={colors.brand} />
+                    <Ionicons
+                      name={maneuverIcons[step.kind]}
+                      size={21}
+                      color={colors.brand}
+                    />
                   </View>
-                  <View style={styles.stepText}>
-                    <Text style={styles.stepTitle}>{step.title}</Text>
-                    <Text style={styles.stepDescription}>
-                      {step.description}
-                    </Text>
-                  </View>
-                  <Text style={styles.stepDistance}>{step.distance}</Text>
+                  <Text style={styles.stepTitle}>{step.text}</Text>
+                  <Text style={styles.stepDistance}>{feet(step.atMeters)}</Text>
                 </View>
               ))}
             </ScrollView>
           </View>
-
-          <PrimaryButton
-            label="End Route"
-            iconName="close-circle-outline"
-            variant="danger"
-            onPress={() => router.replace("/")}
-          />
-        </View>
+        )}
+        <PrimaryButton
+          label="End Route"
+          iconName="close-circle-outline"
+          variant="danger"
+          onPress={() => router.replace("/")}
+        />
       </View>
-    </View>
+    </>
   );
 }
 
@@ -179,6 +303,24 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.white,
   },
+  fallback: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 16,
+    padding: 24,
+  },
+  marker: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderColor: colors.white,
+    borderWidth: 2,
+    backgroundColor: colors.brand,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  markerCode: { color: colors.white, fontSize: 16, fontWeight: "700" },
   mapContainer: {
     flex: 1,
     position: "relative",
@@ -210,8 +352,8 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   instructionSubtitle: {
-    fontSize: 12,
-    color: colors.white,
+    fontSize: 15,
+    color: colors.tint,
   },
   instructionDistance: {
     fontSize: 20,
@@ -219,15 +361,6 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
   bottomDrawer: {
-    marginTop: "auto",
-    ...Platform.select({
-      ios: {
-        height: "55%",
-      },
-      android: {
-        height: "45%",
-      },
-    }),
     backgroundColor: colors.white,
     paddingHorizontal: 16,
     paddingTop: 9,
@@ -238,6 +371,7 @@ const styles = StyleSheet.create({
     borderColor: colors.tintBorder,
     elevation: 8,
   },
+  expandedDrawer: { height: "46%" },
   drawerHandle: {
     alignSelf: "center",
     width: 36,
@@ -259,12 +393,6 @@ const styles = StyleSheet.create({
     minWidth: 0,
     gap: 9,
   },
-  tripRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 7,
-    minWidth: 0,
-  },
   tripValue: {
     ...Platform.select({
       ios: {
@@ -282,14 +410,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
     color: colors.brand,
-  },
-  tripSeparator: {
-    fontSize: 14,
-    color: colors.secondaryText,
-  },
-  chipContainer: {
-    alignItems: "flex-end",
-    gap: 6,
   },
   accessibilityChip: {
     backgroundColor: colors.white,
@@ -343,18 +463,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  stepText: {
-    flex: 1,
-    gap: 2,
-  },
   stepTitle: {
+    flex: 1,
     fontSize: 13,
     fontWeight: "600",
     color: colors.text,
-  },
-  stepDescription: {
-    fontSize: 11,
-    color: colors.secondaryText,
   },
   stepDistance: {
     fontSize: 11,
