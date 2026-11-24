@@ -4,9 +4,9 @@ import { useCampus } from "@/context/CampusContext";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Platform, ScrollView, StyleSheet, Text, View } from "react-native";
+import MapView from "react-native-maps";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-// Temp Placeholders text
 const ROUTE_STEPS = [
   {
     id: "1",
@@ -56,7 +56,6 @@ export default function NavigationScreen() {
     ? `${room.number}`
     : destination || "Unknown Location";
 
-  // Temp Placeholders text
   const estimatedTime = "4 min";
   const totalDistance = "820 ft";
   const arrivalTime = "10:09 AM";
@@ -82,13 +81,17 @@ export default function NavigationScreen() {
         }}
       />
 
-      {/* Map area - Eyob can replace this with the actual GPS map */}
       <View style={styles.mapContainer}>
-        <View style={styles.mapLayer}>
-          <Text style={styles.mapPlaceholder}>Campus Map Coming Soon!</Text>
-        </View>
+        <MapView
+          style={StyleSheet.absoluteFill}
+          initialRegion={{
+            latitude: 47.5853515,
+            longitude: -122.1482834,
+            latitudeDelta: 0.005,
+            longitudeDelta: 0.005,
+          }}
+        />
 
-        {/* Next direction Card */}
         <View style={styles.instructionCard}>
           <View style={styles.instructionIcon}>
             <Ionicons name="arrow-up" size={34} color={colors.white} />
@@ -101,7 +104,6 @@ export default function NavigationScreen() {
           </View>
         </View>
 
-        {/* Route information drawer */}
         <View
           style={[
             styles.bottomDrawer,
@@ -110,7 +112,6 @@ export default function NavigationScreen() {
         >
           <View style={styles.drawerHandle} />
 
-          {/* Trip information */}
           <View style={styles.tripSummary}>
             <View style={styles.tripDetails}>
               <View style={styles.tripRow}>
@@ -128,7 +129,6 @@ export default function NavigationScreen() {
               </View>
             </View>
 
-            {/* Navigation Chips */}
             <View style={styles.chipContainer}>
               {accessibilityOptions.map((option) => (
                 <View key={option} style={styles.accessibilityChip}>
@@ -138,7 +138,6 @@ export default function NavigationScreen() {
             </View>
           </View>
 
-          {/* Step-by-step directions */}
           <View style={styles.stepsSection}>
             <Text style={styles.sectionTitle}>DIRECTIONS</Text>
             <ScrollView
@@ -163,7 +162,6 @@ export default function NavigationScreen() {
             </ScrollView>
           </View>
 
-          {/* End route */}
           <PrimaryButton
             label="End Route"
             iconName="close-circle-outline"
@@ -185,17 +183,6 @@ const styles = StyleSheet.create({
     flex: 1,
     position: "relative",
     minHeight: 100,
-  },
-  mapLayer: {
-    flex: 1,
-    backgroundColor: colors.tint,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 16,
-  },
-  mapPlaceholder: {
-    fontSize: 14,
-    color: colors.secondaryText,
   },
   instructionCard: {
     position: "absolute",
@@ -232,6 +219,7 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
   bottomDrawer: {
+    marginTop: "auto",
     ...Platform.select({
       ios: {
         height: "55%",
