@@ -28,6 +28,12 @@ export type CampusGraph = {
   neighbors: Map<number, { nodeId: number; edge: PathEdge }[]>;
 };
 
+export type Route = {
+  nodeIds: number[];
+  coordinates: Coordinate[];
+  lengthMeters: number;
+};
+
 export type ReportCategory =
   "Bug" | "Feature Request" | "Wrong Information" | "Other";
 
