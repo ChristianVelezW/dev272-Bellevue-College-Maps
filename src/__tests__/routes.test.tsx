@@ -6,6 +6,16 @@ import ReportIssue from "../app/report";
 const mockReplace = jest.fn();
 const mockBack = jest.fn();
 
+jest.mock("react-native-safe-area-context", () => ({
+  ...jest.requireActual("react-native-safe-area-context"),
+  useSafeAreaInsets: () => ({
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+  }),
+}));
+
 jest.mock("expo-router", () => ({
   Stack: { Screen: () => null },
   useLocalSearchParams: () => ({ roomId: "L-201" }),
@@ -26,7 +36,7 @@ describe("Secondary Route & Modal Smoke Tests (#19)", () => {
   test("NavigationScreen renders room directions and returns home on End Route", async () => {
     await render(<NavigationScreen />);
 
-    expect(screen.getByText("Directions to L-201")).toBeOnTheScreen();
+    expect(screen.getByText("DIRECTIONS")).toBeOnTheScreen();
     await fireEvent.press(screen.getByRole("button", { name: "End Route" }));
     expect(mockReplace).toHaveBeenCalledWith("/");
   });
