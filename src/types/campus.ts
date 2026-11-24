@@ -10,6 +10,24 @@ export type Coordinate = {
   longitude: number;
 };
 
+export type PathNode = {
+  id: number;
+  coordinate: Coordinate;
+  entrance?: { buildingId: string; accessible: boolean };
+};
+
+export type PathEdge = {
+  from: number;
+  to: number;
+  lengthMeters: number;
+  stairs: boolean;
+};
+
+export type CampusGraph = {
+  nodes: Map<number, PathNode>;
+  neighbors: Map<number, { nodeId: number; edge: PathEdge }[]>;
+};
+
 export type ReportCategory =
   "Bug" | "Feature Request" | "Wrong Information" | "Other";
 
