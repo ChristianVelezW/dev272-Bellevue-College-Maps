@@ -49,6 +49,16 @@ export type Maneuver = {
   text: string;
 };
 
+export type RouteProgress = {
+  walkedMeters: number;
+  remainingMeters: number;
+  offRouteMeters: number;
+  nextManeuver: Maneuver | null;
+  metersToNext: number | null;
+  splitIndex: number;
+  splitPoint: Coordinate;
+};
+
 export type ReportCategory =
   "Bug" | "Feature Request" | "Wrong Information" | "Other";
 

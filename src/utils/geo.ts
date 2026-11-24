@@ -32,6 +32,8 @@ export function closestPointOnSegment(
   point: Coordinate,
   start: Coordinate,
   end: Coordinate,
+  minFraction = 0,
+  maxFraction = 1,
 ): { point: Coordinate; distanceMeters: number } {
   const longitudeScale =
     metersPerDegree * Math.cos(start.latitude * radiansPerDegree);
@@ -46,7 +48,10 @@ export function closestPointOnSegment(
     lengthSquared === 0
       ? 0
       : (pointX * segmentX + pointY * segmentY) / lengthSquared;
-  const t = Math.max(0, Math.min(1, fraction));
+  const t = Math.max(
+    0,
+    Math.min(1, maxFraction, Math.max(minFraction, fraction)),
+  );
   const closest = {
     latitude: start.latitude + t * deltaLat,
     longitude: start.longitude + t * deltaLon,
