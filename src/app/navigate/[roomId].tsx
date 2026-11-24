@@ -94,12 +94,11 @@ export default function NavigationScreen() {
             <Ionicons name="arrow-up" size={34} color={colors.white} />
           </View>
           <View style={styles.instructionText}>
-            <Text style={styles.instructionTitle}>Head straight</Text>
+            <Text style={styles.instructionDistance}>120 ft</Text>
             <Text style={styles.instructionSubtitle}>
               Continue along the main walkway
             </Text>
           </View>
-          <Text style={styles.instructionDistance}>120 ft</Text>
         </View>
 
         {/* Route information drawer */}
@@ -205,7 +204,7 @@ const styles = StyleSheet.create({
     right: 14,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.white,
+    backgroundColor: colors.secondaryText,
     paddingHorizontal: 14,
     paddingVertical: 13,
     gap: 12,
@@ -223,19 +222,14 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 3,
   },
-  instructionTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: colors.text,
-  },
   instructionSubtitle: {
     fontSize: 12,
-    color: colors.secondaryText,
+    color: colors.white,
   },
   instructionDistance: {
-    fontSize: 15,
+    fontSize: 20,
     fontWeight: "700",
-    color: colors.brand,
+    color: colors.white,
   },
   bottomDrawer: {
     ...Platform.select({
