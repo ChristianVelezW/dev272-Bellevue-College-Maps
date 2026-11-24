@@ -24,9 +24,9 @@ export default function ProfileScreen() {
   } = useCampus();
 
   const savedPlaces = savedPlaceRefs.flatMap((place) => {
-    const building = buildings.find((item) => item.id === place.buildingId);
+    const building = buildings.find((item) => item.id === place.building_id);
 
-    const room = building?.rooms.find((item) => item.id === place.roomId);
+    const room = building?.rooms.find((item) => item.id === place.room_id);
 
     if (!building || !room) {
       return [];

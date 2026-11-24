@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../../constants/colors";
-import { getBuildingById } from "../../data/buildings";
+import { useCampus } from "../../context/CampusContext";
 import { Filter } from "../../components/Filter";
 
 type MapFilter = "Library" | "Food" | "Restrooms" | "Parking";
@@ -20,6 +20,7 @@ export default function MapScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [activeFilter, setActiveFilter] = useState<MapFilter>("Library");
+  const { getBuildingById } = useCampus();
   const building = getBuildingById("D");
 
   return (
@@ -78,7 +79,7 @@ export default function MapScreen() {
                 {building.name}
               </Text>
               <Text style={styles.buildingSubtitle}>
-                {`${building.category} · ${building.floors.length} ${building.floors.length === 1 ? "floor" : "floors"} · ${building.walkTime}`}
+                {`${building.category} · ${building.floors.length} ${building.floors.length === 1 ? "floor" : "floors"} · ${building.walk_time}`}
               </Text>
             </View>
           </View>
