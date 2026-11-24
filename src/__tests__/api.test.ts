@@ -1,0 +1,114 @@
+import { createIssueReport } from "@/api/reports";
+import { createSavedPlace } from "@/api/savedPlaces";
+import { supabase } from "@/lib/supabase";
+
+jest.mock("@/lib/supabase", () => ({
+  supabase: {
+    from: jest.fn(),
+  },
+}));
+
+const mockSingle = jest.fn();
+const mockSelect = jest.fn(() => ({ single: mockSingle }));
+const mockInsert = jest.fn(() => ({ select: mockSelect }));
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  (supabase.from as jest.Mock).mockReturnValue({
+    insert: mockInsert,
+  });
+});
+
+describe("Issue Report Validation & Submission (createIssueReport)", () => {
+  test("rejects blank or whitespace-only descriptions before calling Supabase", async () => {
+    await expect(
+      createIssueReport({
+        category: "Bug",
+        building_id: "L",
+        description: "   ",
+      }),
+    ).rejects.toThrow("Issue description cannot be empty.");
+
+    expect(supabase.from).not.toHaveBeenCalled();
+  });
+
+  test("trims description, inserts valid report, and returns mapped IssueReport", async () => {
+    const mockRow = {
+      id: "rep-1",
+      category: "Wrong Information" as const,
+      building_id: "D",
+      description: "Hours changed on Friday",
+      created_at: "2026-11-24T12:00:00.000Z",
+    };
+    mockSingle.mockResolvedValueOnce({ data: mockRow, error: null });
+
+    const result = await createIssueReport({
+      category: "Wrong Information",
+      building_id: "D",
+      description: "  Hours changed on Friday  ",
+    });
+
+    expect(supabase.from).toHaveBeenCalledWith("reports");
+    expect(mockInsert).toHaveBeenCalledWith({
+      category: "Wrong Information",
+      building_id: "D",
+      description: "Hours changed on Friday",
+    });
+    expect(result).toEqual(mockRow);
+  });
+
+  test("throws a descriptive error when Supabase insert fails", async () => {
+    mockSingle.mockResolvedValueOnce({
+      data: null,
+      error: { message: "permission denied" },
+    });
+
+    await expect(
+      createIssueReport({
+        category: "Bug",
+        description: "Map pin offset",
+      }),
+    ).rejects.toThrow("Failed to submit issue report: permission denied");
+  });
+});
+
+describe("Saved Place Submission (createSavedPlace)", () => {
+  test("inserts a valid saved place and defaults optional label to null", async () => {
+    const mockRow = {
+      id: "sp-10",
+      building_id: "L",
+      room_id: "L-201",
+      label: null,
+      created_at: "2026-11-24T12:05:00.000Z",
+    };
+    mockSingle.mockResolvedValueOnce({ data: mockRow, error: null });
+
+    const result = await createSavedPlace({
+      building_id: "L",
+      room_id: "L-201",
+    });
+
+    expect(supabase.from).toHaveBeenCalledWith("saved_places");
+    expect(mockInsert).toHaveBeenCalledWith({
+      building_id: "L",
+      room_id: "L-201",
+      label: null,
+    });
+    expect(result).toEqual(mockRow);
+  });
+
+  test("throws a descriptive error when saving a place fails", async () => {
+    mockSingle.mockResolvedValueOnce({
+      data: null,
+      error: { message: "foreign key violation" },
+    });
+
+    await expect(
+      createSavedPlace({
+        building_id: "INVALID",
+        room_id: "INVALID-101",
+        label: "Class",
+      }),
+    ).rejects.toThrow("Failed to save place: foreign key violation");
+  });
+});
