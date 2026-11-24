@@ -5,6 +5,7 @@ export const colors = {
   surface: "#EBEEF2",
   text: "#212529",
   secondaryText: "#162F57",
+  gray: "#A7A9AC",
   white: "#FFFFFF",
   danger: "#dc2627",
 } as const;
