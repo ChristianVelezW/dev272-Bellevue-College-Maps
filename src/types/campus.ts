@@ -5,6 +5,11 @@ export type BuildingCatergory =
 
 export type RoomType = "Classroom" | "Computer Lab" | "Office" | "Study";
 
+export type Coordinate = {
+  latitude: number;
+  longitude: number;
+};
+
 export type ReportCategory =
   "Bug" | "Feature Request" | "Wrong Information" | "Other";
 
