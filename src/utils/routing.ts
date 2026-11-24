@@ -1,7 +1,7 @@
 import type { CampusGraph, Coordinate, PathEdge, Route } from "@/types/campus";
 import { closestPointOnSegment, distanceMeters } from "@/utils/geo";
 
-const maxSnapDistanceMeters = 60;
+export const maxSnapDistanceMeters = 60;
 
 type SnapResult = {
   edge: PathEdge;
