@@ -152,3 +152,38 @@ test("remembers submitted searches once and recalls them across filters", async 
   expect(screen.getByRole("button", { name: "All, filter" })).toBeSelected();
   expect(screen.getByText("L-201")).toBeOnTheScreen();
 });
+
+test("renders cleanly while campus data is still loading", async () => {
+  (getBuildings as jest.Mock).mockImplementationOnce(
+    () => new Promise(() => {}),
+  );
+  (getSavedPlaces as jest.Mock).mockImplementationOnce(
+    () => new Promise(() => {}),
+  );
+
+  await render(
+    <CampusProvider>
+      <SearchScreen />
+    </CampusProvider>,
+  );
+
+  expect(screen.getByLabelText("Search building or room")).toBeOnTheScreen();
+  expect(screen.getByText("No matching rooms.")).toBeOnTheScreen();
+  expect(screen.getByText("No matching buildings.")).toBeOnTheScreen();
+});
+
+test("recovers safely when fetching buildings fails", async () => {
+  (getBuildings as jest.Mock).mockRejectedValueOnce(
+    new Error("Network connection failed"),
+  );
+  (getSavedPlaces as jest.Mock).mockResolvedValueOnce([]);
+
+  await render(
+    <CampusProvider>
+      <SearchScreen />
+    </CampusProvider>,
+  );
+
+  expect(await screen.findByText("No matching buildings.")).toBeOnTheScreen();
+  expect(screen.getByText("No matching rooms.")).toBeOnTheScreen();
+});
