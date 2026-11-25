@@ -1,15 +1,26 @@
-// jest.setup.ts: runs before every test file (see "setupFiles" under "jest"
-// in package.json). Tests run in Node on your computer, not on a phone, so
-// native code and secrets get stand-ins here.
-//
-// Nothing needs a stand-in yet. As your app grows, add these:
-//
-// After you install AsyncStorage:
-//   import mockAsyncStorage from "@react-native-async-storage/async-storage/jest/async-storage-mock";
-//   jest.mock("@react-native-async-storage/async-storage", () => mockAsyncStorage);
-//
-// After you add Supabase (fake values; your real keys stay in .env):
-//   process.env.EXPO_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
-//   process.env.EXPO_PUBLIC_SUPABASE_KEY = "sb_publishable_test";
+process.env.EXPO_PUBLIC_SUPABASE_URL =
+  process.env.EXPO_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
+process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY =
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || "placeholder-anon-key";
+
+jest.mock("react-native-maps", () => {
+  const React = jest.requireActual<typeof import("react")>("react");
+  const { View } = jest.requireActual("react-native");
+  const mockCamera = { fitToCoordinates: jest.fn(), animateCamera: jest.fn() };
+  class MapView extends React.Component {
+    fitToCoordinates = mockCamera.fitToCoordinates;
+    animateCamera = mockCamera.animateCamera;
+    render() {
+      return React.createElement(View, this.props);
+    }
+  }
+  return {
+    __esModule: true,
+    default: MapView,
+    Marker: View,
+    Polyline: View,
+    mockCamera,
+  };
+});
 
 export {};

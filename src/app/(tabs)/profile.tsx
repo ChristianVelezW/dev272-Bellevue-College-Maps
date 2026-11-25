@@ -24,22 +24,21 @@ export default function ProfileScreen() {
   } = useCampus();
 
   const savedPlaces = savedPlaceRefs.flatMap((place) => {
-    const building = buildings.find((item) => item.id === place.buildingId);
-
-    const room = building?.rooms.find((item) => item.id === place.roomId);
-
-    if (!building || !room) {
+    const building = buildings.find((item) => item.id === place.building_id);
+    if (!building) {
       return [];
     }
+
+    const room = building.rooms.find((item) => item.id === place.room_id);
 
     return [
       {
         id: place.id,
         buildingId: building.id,
         buildingCode: building.code,
-        locationName: room.name,
-        roomNumber: room.number,
-        floor: room.floor,
+        locationName: place.label?.trim() || room?.name || building.name,
+        roomNumber: room?.number ?? "Building",
+        floor: room?.floor ?? 1,
       },
     ];
   });

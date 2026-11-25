@@ -1,5 +1,17 @@
 import { fireEvent, render, screen } from "@testing-library/react-native";
-import SearchScreen from "../app/(tabs)/search";
+import { getBuildings } from "@/api/building";
+import { getSavedPlaces } from "@/api/savedPlaces";
+import type { CampusBuilding, SavedPlace } from "@/types/campus";
+import SearchScreen from "@/app/(tabs)/search";
+import { CampusProvider } from "@/context/CampusContext";
+
+jest.mock("@/api/building", () => ({
+  getBuildings: jest.fn(),
+}));
+
+jest.mock("@/api/savedPlaces", () => ({
+  getSavedPlaces: jest.fn(),
+}));
 
 const mockPush = jest.fn();
 
@@ -11,10 +23,64 @@ jest.mock("react-native-safe-area-context", () => ({
 }));
 jest.mock("expo-image", () => ({ Image: "Image" }));
 
-beforeEach(() => jest.clearAllMocks());
+const mockBuildings: CampusBuilding[] = [
+  {
+    id: "L",
+    code: "L",
+    name: "L Building",
+    category: "Academic",
+    hours: "Open until 10:00 PM",
+    walk_time: "4 min walk",
+    floors: [1, 2, 3],
+    tags: ["Accessible entry", "Elevator", "Restrooms"],
+    rooms: [
+      {
+        id: "L-101",
+        building_id: "L",
+        number: "L-101",
+        name: "Lecture Hall",
+        floor: 1,
+        type: "Classroom",
+        is_accessible: true,
+      },
+      {
+        id: "L-201",
+        building_id: "L",
+        number: "L-201",
+        name: "Classroom",
+        floor: 2,
+        type: "Classroom",
+        is_accessible: true,
+      },
+      {
+        id: "L-225",
+        building_id: "L",
+        number: "L-225",
+        name: "Faculty Office",
+        floor: 2,
+        type: "Office",
+        is_accessible: false,
+      },
+    ],
+  },
+];
+
+const mockSavedPlaces: SavedPlace[] = [];
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  (getBuildings as jest.Mock).mockResolvedValue(mockBuildings);
+  (getSavedPlaces as jest.Mock).mockResolvedValue(mockSavedPlaces);
+});
 
 test("filters as you type and clears the query to restore results", async () => {
-  await render(<SearchScreen />);
+  await render(
+    <CampusProvider>
+      <SearchScreen />
+    </CampusProvider>,
+  );
+  await screen.findByText("L-101");
+
   const input = screen.getByLabelText("Search building or room");
   expect(screen.queryByRole("button", { name: "Clear search" })).toBeNull();
   await fireEvent.changeText(input, "l-201");
@@ -31,7 +97,13 @@ test("filters as you type and clears the query to restore results", async () => 
 });
 
 test("retains category and accessibility filters and opens a room's building", async () => {
-  await render(<SearchScreen />);
+  await render(
+    <CampusProvider>
+      <SearchScreen />
+    </CampusProvider>,
+  );
+  await screen.findByText("L-201");
+
   await fireEvent.press(
     screen.getByRole("button", { name: "Buildings, filter" }),
   );
@@ -54,7 +126,13 @@ test("retains category and accessibility filters and opens a room's building", a
 });
 
 test("remembers submitted searches once and recalls them across filters", async () => {
-  await render(<SearchScreen />);
+  await render(
+    <CampusProvider>
+      <SearchScreen />
+    </CampusProvider>,
+  );
+  await screen.findByText("L-201");
+
   const input = screen.getByLabelText("Search building or room");
   await fireEvent.changeText(input, "  L-201  ");
   await fireEvent(input, "submitEditing");
@@ -73,4 +151,39 @@ test("remembers submitted searches once and recalls them across filters", async 
   expect(input).toHaveDisplayValue("l-201");
   expect(screen.getByRole("button", { name: "All, filter" })).toBeSelected();
   expect(screen.getByText("L-201")).toBeOnTheScreen();
+});
+
+test("renders cleanly while campus data is still loading", async () => {
+  (getBuildings as jest.Mock).mockImplementationOnce(
+    () => new Promise(() => {}),
+  );
+  (getSavedPlaces as jest.Mock).mockImplementationOnce(
+    () => new Promise(() => {}),
+  );
+
+  await render(
+    <CampusProvider>
+      <SearchScreen />
+    </CampusProvider>,
+  );
+
+  expect(screen.getByLabelText("Search building or room")).toBeOnTheScreen();
+  expect(screen.getByText("No matching rooms.")).toBeOnTheScreen();
+  expect(screen.getByText("No matching buildings.")).toBeOnTheScreen();
+});
+
+test("recovers safely when fetching buildings fails", async () => {
+  (getBuildings as jest.Mock).mockRejectedValueOnce(
+    new Error("Network connection failed"),
+  );
+  (getSavedPlaces as jest.Mock).mockResolvedValueOnce([]);
+
+  await render(
+    <CampusProvider>
+      <SearchScreen />
+    </CampusProvider>,
+  );
+
+  expect(await screen.findByText("No matching buildings.")).toBeOnTheScreen();
+  expect(screen.getByText("No matching rooms.")).toBeOnTheScreen();
 });

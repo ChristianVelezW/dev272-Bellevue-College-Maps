@@ -69,7 +69,7 @@ export default function SearchScreen() {
           building.name.toLowerCase().includes(normalizedQuery);
 
         const matchesAccessible =
-          activeFilter !== "Accessible" || room.isAccessible;
+          activeFilter !== "Accessible" || room.is_accessible;
 
         return matchesText && matchesAccessible;
       })
@@ -187,7 +187,7 @@ export default function SearchScreen() {
                       subtitle={`${room.buildingName} · Floor ${room.floor} · ${room.name}`}
                       variant="building"
                       badge={room.buildingCode}
-                      accessibilityLabel={`${room.number}, ${room.buildingName}, Floor ${room.floor}, ${room.name}${room.isAccessible ? ", Accessible" : ""}`}
+                      accessibilityLabel={`${room.number}, ${room.buildingName}, Floor ${room.floor}, ${room.name}${room.is_accessible ? ", Accessible" : ""}`}
                       onPress={() => {
                         rememberSearch(query || room.number);
                         router.push({
@@ -213,7 +213,7 @@ export default function SearchScreen() {
                     <LocationRow
                       key={building.id}
                       title={building.name}
-                      subtitle={`${building.floors.length} floors · ${building.hours}`}
+                      subtitle={`${building.floors.length} ${building.floors.length === 1 ? "floor" : "floors"} · ${building.hours}`}
                       variant="building"
                       badge={building.code}
                       onPress={() => {
