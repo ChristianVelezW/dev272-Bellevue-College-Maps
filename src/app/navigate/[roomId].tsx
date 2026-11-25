@@ -1,201 +1,480 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { type ComponentProps, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Linking,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import MapView, { Marker, Polyline } from "react-native-maps";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { colors } from "@/constants/colors";
 import { useCampus } from "@/context/CampusContext";
-import Ionicons from "@expo/vector-icons/Ionicons";
-import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { Platform, ScrollView, StyleSheet, Text, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  campusGraph,
+  campusWalkways,
+  mainCampusEntranceBuildingId,
+} from "@/data/campusGraph";
+import { useGuidance } from "@/hooks/useGuidance";
+import { useGuidanceCamera } from "@/hooks/useGuidanceCamera";
+import type {
+  CampusBuilding,
+  CampusRoom,
+  Maneuver,
+  Route,
+} from "@/types/campus";
+import { buildIndoorSteps } from "@/utils/indoorSteps";
 
-// Temp Placeholders text
-const ROUTE_STEPS = [
-  {
-    id: "1",
-    icon: "arrow-up" as const,
-    title: "Head straight",
-    description: "Continue along the main campus walkway",
-    distance: "355 ft",
-  },
-  {
-    id: "2",
-    icon: "arrow-back" as const,
-    title: "Turn left",
-    description: "Follow the path toward your building",
-    distance: "210 ft",
-  },
-  {
-    id: "3",
-    icon: "arrow-up" as const,
-    title: "Continue straight",
-    description: "Walk toward the main entrance",
-    distance: "255 ft",
-  },
-  {
-    id: "4",
-    icon: "location" as const,
-    title: "You have arrived",
-    description: "Your destination is nearby",
-    distance: "",
-  },
-];
+const maneuverIcons = {
+  start: "arrow-up",
+  "slight-left": "arrow-up-left-box",
+  left: "arrow-back",
+  "sharp-left": "return-down-back",
+  "slight-right": "arrow-up-right-box",
+  right: "arrow-forward",
+  "sharp-right": "return-down-forward",
+  arrive: "location",
+} satisfies Record<Maneuver["kind"], ComponentProps<typeof Ionicons>["name"]>;
+
+const entrances = [...campusGraph.nodes.values()].filter(
+  (node) => node.entrance,
+);
+const manualOrigin = `the ${mainCampusEntranceBuildingId} entrance`;
+
+function feet(meters: number) {
+  return `${Math.round(meters * 3.281)} ft`;
+}
+
+function findDestination(
+  buildings: CampusBuilding[],
+  roomId: string | undefined,
+) {
+  const key = roomId?.trim().toLowerCase();
+  if (!key) return;
+  for (const building of buildings) {
+    const room = building.rooms.find(
+      (candidate) =>
+        candidate.id.toLowerCase() === key ||
+        candidate.number.toLowerCase() === key,
+    );
+    if (room) return { building, room };
+  }
+}
 
 export default function NavigationScreen() {
-  const { roomId } = useLocalSearchParams<{ roomId: string | string[] }>();
+  const { roomId } = useLocalSearchParams<{ roomId?: string | string[] }>();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
-  const { buildings } = useCampus();
-  const destination = Array.isArray(roomId) ? roomId[0] : roomId;
-  const building = buildings.find((item) =>
-    item.rooms.some(
-      (room) => room.number.toLowerCase() === destination?.toLowerCase(),
-    ),
+  const { buildings, isLoading, error, refreshCampusData, avoidStairs } =
+    useCampus();
+  const destination = findDestination(
+    buildings,
+    Array.isArray(roomId) ? roomId[0] : roomId,
   );
-  const room = building?.rooms.find(
-    (item) => item.number.toLowerCase() === destination?.toLowerCase(),
-  );
-  const destinationName = room
-    ? `${room.number}`
-    : destination || "Unknown Location";
-
-  // Temp Placeholders text
-  const estimatedTime = "4 min";
-  const totalDistance = "820 ft";
-  const arrivalTime = "10:09 AM";
-
-  const accessibilityOptions = ["Accessible Route", "No Stairs"];
 
   return (
     <View style={styles.container}>
       <Stack.Screen
         options={{
-          title: `Directions to ${destination || "Unknown Location"}`,
+          title: destination
+            ? `Directions to ${destination.room.number}`
+            : "Directions",
           headerTitleAlign: "center",
           headerTitleStyle: {
             color: colors.text,
             fontSize: 18,
             fontWeight: "600",
           },
-          headerStyle: {
-            backgroundColor: colors.white,
-          },
+          headerStyle: { backgroundColor: colors.white },
           headerShadowVisible: false,
           headerTintColor: colors.brand,
         }}
       />
-
-      {/* Map area - Eyob can replace this with the actual GPS map */}
-      <View style={styles.mapContainer}>
-        <View style={styles.mapLayer}>
-          <Text style={styles.mapPlaceholder}>Campus Map Coming Soon!</Text>
+      {destination ? (
+        <RoomGuidance {...destination} avoidStairs={avoidStairs} />
+      ) : (
+        <View style={styles.fallback}>
+          {isLoading && <ActivityIndicator color={colors.brand} />}
+          <Text style={styles.sectionTitle}>
+            {isLoading
+              ? "Loading room…"
+              : error
+                ? "Couldn’t load campus rooms"
+                : "Room not found"}
+          </Text>
+          {!isLoading &&
+            (error ? (
+              <PrimaryButton label="Try again" onPress={refreshCampusData} />
+            ) : (
+              <PrimaryButton
+                label="Back to Search"
+                onPress={() => router.replace("/search")}
+              />
+            ))}
         </View>
-
-        {/* Next direction Card */}
-        <View style={styles.instructionCard}>
-          <View style={styles.instructionIcon}>
-            <Ionicons name="arrow-up" size={34} color={colors.white} />
-          </View>
-          <View style={styles.instructionText}>
-            <Text style={styles.instructionDistance}>120 ft</Text>
-            <Text style={styles.instructionSubtitle}>
-              Continue along the main walkway
-            </Text>
-          </View>
-        </View>
-
-        {/* Route information drawer */}
-        <View
-          style={[
-            styles.bottomDrawer,
-            { paddingBottom: Math.max(insets.bottom, 12) },
-          ]}
-        >
-          <View style={styles.drawerHandle} />
-
-          {/* Trip information */}
-          <View style={styles.tripSummary}>
-            <View style={styles.tripDetails}>
-              <View style={styles.tripRow}>
-                <Text style={styles.tripValue}>{estimatedTime}</Text>
-                <Text style={styles.tripSeparator}>•</Text>
-                <Text style={styles.tripValue}>{totalDistance}</Text>
-              </View>
-
-              <View style={styles.tripRow}>
-                <Text style={styles.tripSubValue}>{arrivalTime}</Text>
-                <Text style={styles.tripSeparator}>•</Text>
-                <Text style={styles.tripSubValue} numberOfLines={1}>
-                  {destinationName}
-                </Text>
-              </View>
-            </View>
-
-            {/* Navigation Chips */}
-            <View style={styles.chipContainer}>
-              {accessibilityOptions.map((option) => (
-                <View key={option} style={styles.accessibilityChip}>
-                  <Text style={styles.accessibilityChipText}>{option}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
-
-          {/* Step-by-step directions */}
-          <View style={styles.stepsSection}>
-            <Text style={styles.sectionTitle}>DIRECTIONS</Text>
-            <ScrollView
-              style={styles.stepsList}
-              showsVerticalScrollIndicator={false}
-              nestedScrollEnabled
-            >
-              {ROUTE_STEPS.map((step) => (
-                <View key={step.id} style={styles.stepRow}>
-                  <View style={styles.stepIconContainer}>
-                    <Ionicons name={step.icon} size={21} color={colors.brand} />
-                  </View>
-                  <View style={styles.stepText}>
-                    <Text style={styles.stepTitle}>{step.title}</Text>
-                    <Text style={styles.stepDescription}>
-                      {step.description}
-                    </Text>
-                  </View>
-                  <Text style={styles.stepDistance}>{step.distance}</Text>
-                </View>
-              ))}
-            </ScrollView>
-          </View>
-
-          {/* End route */}
-          <PrimaryButton
-            label="End Route"
-            iconName="close-circle-outline"
-            variant="danger"
-            onPress={() => router.replace("/")}
-          />
-        </View>
-      </View>
+      )}
     </View>
   );
 }
 
+function RoomGuidance({
+  building,
+  room,
+  avoidStairs,
+}: {
+  building: CampusBuilding;
+  room: CampusRoom;
+  avoidStairs: boolean;
+}) {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { status, permission, route, maneuvers, progress, position } =
+    useGuidance(campusGraph, building.id, building.name, avoidStairs);
+  const mapRef = useRef<MapView>(null);
+  const camera = useGuidanceCamera(
+    mapRef,
+    route,
+    position,
+    progress?.walkedMeters ?? 0,
+  );
+  const [selection, setSelection] = useState<{
+    route: Route;
+    index: number;
+  } | null>(null);
+  const manual = permission === "denied";
+  const stepIndex =
+    selection && selection.route === route ? selection.index : 0;
+  const manualStep = manual ? maneuvers[stepIndex] : undefined;
+  const indoors =
+    status === "manual-indoors" ||
+    status === "arrived" ||
+    manualStep?.kind === "arrive";
+  const coordinates = route?.coordinates ?? [];
+  const walked =
+    progress && progress.walkedMeters > 0
+      ? [...coordinates.slice(0, progress.splitIndex + 1), progress.splitPoint]
+      : [];
+  const remaining = manual
+    ? coordinates
+    : progress && progress.remainingMeters > 0
+      ? [progress.splitPoint, ...coordinates.slice(progress.splitIndex + 1)]
+      : [];
+  const entrance =
+    coordinates[coordinates.length - 1] ??
+    entrances.find(
+      (node) =>
+        node.entrance?.buildingId === building.id &&
+        (!avoidStairs || node.entrance.accessible),
+    )?.coordinate;
+
+  const next = manualStep ?? progress?.nextManeuver;
+  const showTurn = (manual || status === "guiding") && next != null;
+  const statusMessages = {
+    asking: "Allow location access to start directions.",
+    locating: "Finding your location…",
+    denied:
+      manualStep?.text ??
+      (avoidStairs
+        ? `No step-free route from ${manualOrigin} to this building.`
+        : `No walking route from ${manualOrigin} to this building.`),
+    "manual-indoors": `Start at ${manualOrigin}.`,
+    "location-unavailable": "Location unavailable. Check Location Services.",
+    "off-campus": "You’re outside the campus paths. Move closer to a walkway.",
+    "no-route": avoidStairs
+      ? "No step-free route to this building."
+      : "No walking route to this building.",
+    rerouting: "Rerouting from your current location…",
+    arrived: `You’ve arrived at ${building.name}.`,
+    guiding: next?.text ?? "Continue to the entrance.",
+  };
+  const bannerIcon = showTurn
+    ? maneuverIcons[next.kind]
+    : indoors
+      ? "location"
+      : status === "rerouting"
+        ? "sync"
+        : "locate";
+  const remainingMeters =
+    status === "arrived"
+      ? 0
+      : manualStep && route
+        ? route.lengthMeters - manualStep.atMeters
+        : progress?.remainingMeters;
+
+  return (
+    <>
+      <View style={styles.mapContainer}>
+        <MapView
+          ref={mapRef}
+          onMapReady={camera.onMapReady}
+          onPanDrag={camera.onPanDrag}
+          testID="guidance-map"
+          style={StyleSheet.absoluteFill}
+          showsUserLocation={permission === "granted"}
+          initialRegion={{
+            latitude: 47.58455,
+            longitude: -122.1485,
+            latitudeDelta: 0.0026,
+            longitudeDelta: 0.0034,
+          }}
+        >
+          {campusWalkways.map((line, i) => (
+            <Polyline
+              key={i}
+              testID="campus-walkway"
+              coordinates={line}
+              strokeColor={colors.tintBorder}
+              strokeWidth={2}
+            />
+          ))}
+          {walked.length >= 2 && (
+            <Polyline
+              testID="walked-route"
+              coordinates={walked}
+              strokeColor={colors.gray}
+              strokeWidth={6}
+              zIndex={1}
+            />
+          )}
+          {remaining.length >= 2 && (
+            <Polyline
+              testID="remaining-route"
+              coordinates={remaining}
+              strokeColor={colors.brand}
+              strokeWidth={6}
+              zIndex={2}
+            />
+          )}
+          {entrance && (
+            <Marker
+              testID="destination-entrance"
+              coordinate={entrance}
+              title={`${building.name} entrance`}
+              anchor={{ x: 0.5, y: 0.5 }}
+            >
+              <View style={styles.marker}>
+                <Text style={styles.markerCode}>{building.code}</Text>
+              </View>
+            </Marker>
+          )}
+        </MapView>
+        {camera.canRecenter && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Recenter"
+            onPress={camera.recenter}
+            style={styles.recenter}
+          >
+            <Ionicons name="locate" size={18} color={colors.brand} />
+            <Text style={styles.controlText}>Recenter</Text>
+          </Pressable>
+        )}
+        <View
+          testID="turn-card"
+          onLayout={({ nativeEvent }) =>
+            camera.setBannerHeight(nativeEvent.layout.height)
+          }
+          style={styles.instructionCard}
+          accessibilityLiveRegion="polite"
+        >
+          <View style={styles.instructionIcon}>
+            <Ionicons name={bannerIcon} size={32} color={colors.white} />
+          </View>
+          <View style={styles.instructionText}>
+            {manualStep && (
+              <Text style={styles.manualCaption}>
+                {`From ${manualOrigin} · Step ${stepIndex + 1} of ${maneuvers.length}`}
+              </Text>
+            )}
+            {status === "guiding" && progress?.metersToNext != null && (
+              <Text style={styles.instructionDistance}>
+                {feet(progress.metersToNext)}
+              </Text>
+            )}
+            <Text style={styles.instructionSubtitle}>
+              {statusMessages[status]}
+            </Text>
+            {manual && (
+              <View style={styles.permissionActions}>
+                <Text style={styles.instructionSubtitle}>Location off</Text>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => Linking.openSettings()}
+                  style={styles.settings}
+                >
+                  <Text style={styles.settingsText}>Open Settings</Text>
+                </Pressable>
+              </View>
+            )}
+          </View>
+        </View>
+      </View>
+
+      <View
+        style={[
+          styles.bottomDrawer,
+          (indoors || maneuvers.length > 0) && styles.expandedDrawer,
+          { paddingBottom: Math.max(insets.bottom, 12) },
+        ]}
+      >
+        <View style={styles.drawerHandle} />
+        <View style={styles.tripSummary}>
+          <View style={styles.tripDetails}>
+            {remainingMeters != null && (
+              <Text style={styles.tripValue}>
+                {`${Math.ceil(remainingMeters / 1.3 / 60)} min · ${feet(remainingMeters)}`}
+              </Text>
+            )}
+            <Text style={styles.tripSubValue}>
+              Room {room.number} · {building.name}
+            </Text>
+          </View>
+          {avoidStairs && (
+            <View style={styles.accessibilityChip}>
+              <Text style={styles.accessibilityChipText}>No stairs</Text>
+            </View>
+          )}
+        </View>
+        {indoors ? (
+          <View style={styles.stepsSection}>
+            <Text style={styles.sectionTitle}>INDOOR DIRECTIONS</Text>
+            <ScrollView style={styles.stepsList}>
+              {buildIndoorSteps(building.name, room, avoidStairs).map(
+                (instruction, i) => (
+                  <View key={instruction} style={styles.stepRow}>
+                    <View style={styles.stepIconContainer}>
+                      <Text style={styles.controlText}>{i + 1}</Text>
+                    </View>
+                    <Text style={styles.stepTitle}>{instruction}</Text>
+                  </View>
+                ),
+              )}
+            </ScrollView>
+          </View>
+        ) : (
+          maneuvers.length > 0 && (
+            <View style={styles.stepsSection}>
+              <Text style={styles.sectionTitle}>DIRECTIONS</Text>
+              <ScrollView style={styles.stepsList} nestedScrollEnabled>
+                {maneuvers.map((step, i) => (
+                  <View
+                    key={i}
+                    style={[
+                      styles.stepRow,
+                      manual && i === stepIndex && styles.selectedStep,
+                    ]}
+                    accessibilityState={
+                      manual ? { selected: i === stepIndex } : undefined
+                    }
+                  >
+                    <View style={styles.stepIconContainer}>
+                      <Ionicons
+                        name={maneuverIcons[step.kind]}
+                        size={21}
+                        color={colors.brand}
+                      />
+                    </View>
+                    <Text style={styles.stepTitle}>{step.text}</Text>
+                    <Text style={styles.stepDistance}>
+                      {feet(step.atMeters)}
+                    </Text>
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+          )
+        )}
+        {manualStep && route && (
+          <View style={styles.stepControls}>
+            <PrimaryButton
+              label="Back"
+              variant="secondary"
+              disabled={stepIndex === 0}
+              onPress={() => setSelection({ route, index: stepIndex - 1 })}
+              style={styles.stepButton}
+            />
+            <PrimaryButton
+              label="Next"
+              disabled={stepIndex === maneuvers.length - 1}
+              onPress={() => setSelection({ route, index: stepIndex + 1 })}
+              style={styles.stepButton}
+            />
+          </View>
+        )}
+        <PrimaryButton
+          label="End Route"
+          iconName="close-circle-outline"
+          variant="danger"
+          onPress={() => router.replace("/")}
+        />
+      </View>
+    </>
+  );
+}
+
 const styles = StyleSheet.create({
+  stepControls: { flexDirection: "row", gap: 12 },
+  stepButton: { flex: 1, width: "auto", minHeight: 44, paddingVertical: 8 },
+  selectedStep: { backgroundColor: colors.tint },
+  manualCaption: { color: colors.white, fontWeight: "700", fontSize: 14 },
+  permissionActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    columnGap: 12,
+  },
+  settings: { minHeight: 44, justifyContent: "center" },
+  settingsText: {
+    color: colors.white,
+    textDecorationLine: "underline",
+    fontWeight: "600",
+  },
+  recenter: {
+    position: "absolute",
+    bottom: 14,
+    right: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    minHeight: 44,
+    backgroundColor: colors.white,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: colors.tintBorder,
+  },
+  controlText: { fontWeight: "600", color: colors.brand },
   container: {
     flex: 1,
     backgroundColor: colors.white,
   },
+  fallback: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 16,
+    padding: 24,
+  },
+  marker: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderColor: colors.white,
+    borderWidth: 2,
+    backgroundColor: colors.brand,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  markerCode: { color: colors.white, fontSize: 16, fontWeight: "700" },
   mapContainer: {
     flex: 1,
     position: "relative",
     minHeight: 100,
-  },
-  mapLayer: {
-    flex: 1,
-    backgroundColor: colors.tint,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 16,
-  },
-  mapPlaceholder: {
-    fontSize: 14,
-    color: colors.secondaryText,
   },
   instructionCard: {
     position: "absolute",
@@ -223,8 +502,8 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   instructionSubtitle: {
-    fontSize: 12,
-    color: colors.white,
+    fontSize: 15,
+    color: colors.tint,
   },
   instructionDistance: {
     fontSize: 20,
@@ -232,14 +511,6 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
   bottomDrawer: {
-    ...Platform.select({
-      ios: {
-        height: "55%",
-      },
-      android: {
-        height: "45%",
-      },
-    }),
     backgroundColor: colors.white,
     paddingHorizontal: 16,
     paddingTop: 9,
@@ -250,6 +521,7 @@ const styles = StyleSheet.create({
     borderColor: colors.tintBorder,
     elevation: 8,
   },
+  expandedDrawer: { height: "46%" },
   drawerHandle: {
     alignSelf: "center",
     width: 36,
@@ -271,12 +543,6 @@ const styles = StyleSheet.create({
     minWidth: 0,
     gap: 9,
   },
-  tripRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 7,
-    minWidth: 0,
-  },
   tripValue: {
     ...Platform.select({
       ios: {
@@ -294,14 +560,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
     color: colors.brand,
-  },
-  tripSeparator: {
-    fontSize: 14,
-    color: colors.secondaryText,
-  },
-  chipContainer: {
-    alignItems: "flex-end",
-    gap: 6,
   },
   accessibilityChip: {
     backgroundColor: colors.white,
@@ -355,18 +613,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  stepText: {
-    flex: 1,
-    gap: 2,
-  },
   stepTitle: {
+    flex: 1,
     fontSize: 13,
     fontWeight: "600",
     color: colors.text,
-  },
-  stepDescription: {
-    fontSize: 11,
-    color: colors.secondaryText,
   },
   stepDistance: {
     fontSize: 11,
