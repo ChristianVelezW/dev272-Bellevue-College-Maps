@@ -1,5 +1,18 @@
 import { buildIndoorSteps } from "@/utils/indoorSteps";
 
+test.each([false, true])(
+  "goes straight to L-101 on the entrance floor with avoidStairs=%s",
+  (avoidStairs) => {
+    expect(
+      buildIndoorSteps(
+        "Library",
+        { number: "L-101", floor: 1, is_accessible: true },
+        avoidStairs,
+      ),
+    ).toEqual(["Enter Library.", "Find room L-101 on this floor."]);
+  },
+);
+
 test.each([
   [false, false, "elevator or stairs"],
   [true, false, "elevator"],

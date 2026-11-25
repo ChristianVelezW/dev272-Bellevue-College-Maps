@@ -1,6 +1,7 @@
 import * as Location from "expo-location";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AppState } from "react-native";
+import { mainCampusEntranceBuildingId } from "@/data/campusGraph";
 import type {
   CampusGraph,
   Coordinate,
@@ -22,6 +23,7 @@ type Guidance = {
   status:
     | "asking"
     | "denied"
+    | "manual-indoors"
     | "locating"
     | "location-unavailable"
     | "off-campus"
@@ -184,23 +186,34 @@ export function useGuidance(
     };
   }, [permission, graph, targetBuildingId, targetBuildingName, avoidStairs]);
 
-  const manual = useMemo(() => {
+  const manual = useMemo<Guidance | null>(() => {
     if (permission !== "denied") return null;
-    const start = [...graph.nodes.values()].find(
-      (node) => node.entrance?.buildingId === "D",
+    const mainCampusEntrance = [...graph.nodes.values()].find(
+      (node) => node.entrance?.buildingId === mainCampusEntranceBuildingId,
     );
-    const route = start
-      ? shortestRoute(graph, start.id, targetBuildingId, avoidStairs)
+    const route = mainCampusEntrance
+      ? shortestRoute(
+          graph,
+          mainCampusEntrance.id,
+          targetBuildingId,
+          avoidStairs,
+        )
       : null;
+    const startsIndoors = route?.nodeIds.length === 1;
     return {
       ...initialGuidance,
+      status: startsIndoors ? "manual-indoors" : "denied",
       route,
-      maneuvers: route ? buildManeuvers(route, targetBuildingName) : [],
+      maneuvers:
+        route && !startsIndoors
+          ? buildManeuvers(route, targetBuildingName)
+          : [],
     };
   }, [permission, graph, targetBuildingId, targetBuildingName, avoidStairs]);
 
+  if (manual) return { ...manual, permission };
   return {
-    ...(manual ?? guidance),
+    ...guidance,
     permission,
     status: permission === "granted" ? guidance.status : permission,
   };

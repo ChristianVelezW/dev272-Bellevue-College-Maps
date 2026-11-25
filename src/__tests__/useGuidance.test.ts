@@ -152,6 +152,25 @@ test("denial routes from D and returning from Settings starts live GPS after a g
   await unmount();
 });
 
+test("a denied route to the starting building goes straight indoors", async () => {
+  requestPermission.mockResolvedValue({
+    ...granted,
+    granted: false,
+    status: Location.PermissionStatus.DENIED,
+  });
+  const { result } = await renderHook(() =>
+    useGuidance(campusGraph, "D", "D Building", true),
+  );
+  expect(result.current).toMatchObject({
+    status: "manual-indoors",
+    permission: "denied",
+    maneuvers: [],
+    position: null,
+  });
+  expect(result.current.route?.nodeIds).toHaveLength(1);
+  expect(watch).not.toHaveBeenCalled();
+});
+
 test("accurate fixes build guidance, advance progress, and latch arrival under 10 m", async () => {
   const { result, unmount } = await start();
   expect(result.current).toMatchObject({

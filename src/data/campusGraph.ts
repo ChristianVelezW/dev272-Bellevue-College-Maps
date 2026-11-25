@@ -1,6 +1,8 @@
 import campusPaths from "@/data/campus-paths.json";
 import { buildGraph } from "@/utils/graph";
 
+export const mainCampusEntranceBuildingId = "D";
+
 export const { graph: campusGraph } = buildGraph(campusPaths);
 
 export const campusWalkways = campusPaths.features.flatMap(({ geometry }) => {

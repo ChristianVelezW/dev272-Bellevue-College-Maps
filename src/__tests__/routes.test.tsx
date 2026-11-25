@@ -26,6 +26,12 @@ const mockBuildings = [
     name: "Student Union",
     rooms: [{ id: "room-key", number: "C-102", floor: 1, is_accessible: true }],
   },
+  {
+    id: "D",
+    code: "D",
+    name: "D Building",
+    rooms: [{ id: "D-204", number: "D-204", floor: 2, is_accessible: true }],
+  },
 ];
 jest.mock("@/context/CampusContext", () => ({
   useCampus: () => ({
@@ -223,7 +229,9 @@ describe("Secondary Route & Modal Smoke Tests (#19)", () => {
       expect(card.getByText(step.text)).toBeOnTheScreen();
     }
     expect(next()).toBeDisabled();
-    expect(screen.getByText("Find room C-102.")).toBeOnTheScreen();
+    expect(
+      screen.getByText("Find room C-102 on this floor."),
+    ).toBeOnTheScreen();
     await fireEvent.press(back());
     expect(
       card.getByText(maneuvers[maneuvers.length - 2].text),
@@ -254,17 +262,54 @@ describe("Secondary Route & Modal Smoke Tests (#19)", () => {
     expect(screen.queryByRole("button", { name: "Next" })).toBeNull();
   });
 
+  test("with location denied, D-204 opens indoors without outdoor steps", async () => {
+    mockRoomId = "D-204";
+    mockGuidance.mockReturnValue({
+      status: "manual-indoors",
+      permission: "denied",
+      route: shortestRoute(campusGraph, d.id, "D"),
+      maneuvers: [],
+      position: null,
+      progress: null,
+    });
+    await render(<NavigationScreen />);
+    expect(screen.getByText("Start at the D entrance.")).toBeOnTheScreen();
+    expect(screen.getByText("INDOOR DIRECTIONS")).toBeOnTheScreen();
+    expect(screen.getByText("Take the elevator to floor 2.")).toBeOnTheScreen();
+    expect(screen.getByText("Find room D-204.")).toBeOnTheScreen();
+    expect(
+      screen.getByRole("button", { name: "Open Settings" }),
+    ).toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: "Next" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Back" })).toBeNull();
+    expect(screen.queryByTestId("remaining-route")).toBeNull();
+  });
+
   test("arriving at the entrance displays the room's indoor directions", async () => {
     mockGuidance.mockReturnValue({ ...guiding, status: "arrived" });
     await render(<NavigationScreen />);
     expect(screen.getByText("INDOOR DIRECTIONS")).toBeOnTheScreen();
     expect(screen.getByText("Enter Student Union.")).toBeOnTheScreen();
-    expect(screen.getByText("Take the elevator to floor 1.")).toBeOnTheScreen();
-    expect(screen.getByText("Find room C-102.")).toBeOnTheScreen();
+    expect(
+      screen.getByText("Find room C-102 on this floor."),
+    ).toBeOnTheScreen();
   });
 
-  test("fits the route once, follows new fixes and pauses until Recenter after a drag", async () => {
+  test("keeps the overview through early fixes, follows after 5 m, and pauses on drag", async () => {
     const { mockCamera } = jest.requireMock("react-native-maps");
+    const start = route.coordinates[0];
+    const nearStart = {
+      latitude: (start.latitude + midpoint.latitude) / 2,
+      longitude: (start.longitude + midpoint.longitude) / 2,
+    };
+    function fix(position: typeof start) {
+      mockGuidance.mockReturnValue({
+        ...guiding,
+        position,
+        progress: getRouteProgress(route, position, maneuvers),
+      });
+    }
+    fix(start);
     const { rerender } = await render(<NavigationScreen />);
     const map = screen.getByTestId("guidance-map");
     await fireEvent(map, "mapReady");
@@ -279,20 +324,17 @@ describe("Secondary Route & Modal Smoke Tests (#19)", () => {
       },
     );
     expect(mockCamera.animateCamera).not.toHaveBeenCalled();
-    mockGuidance.mockReturnValue({
-      ...guiding,
-      position: route.coordinates[1],
-    });
+    fix(nearStart);
+    await rerender(<NavigationScreen />);
+    expect(mockCamera.animateCamera).not.toHaveBeenCalled();
+    fix(midpoint);
     await rerender(<NavigationScreen />);
     expect(mockCamera.animateCamera).toHaveBeenCalledWith(
-      { center: route.coordinates[1] },
+      { center: midpoint },
       expect.anything(),
     );
     await fireEvent(map, "panDrag");
-    mockGuidance.mockReturnValue({
-      ...guiding,
-      position: route.coordinates[2],
-    });
+    fix(route.coordinates[2]);
     await rerender(<NavigationScreen />);
     expect(mockCamera.animateCamera).toHaveBeenCalledTimes(1);
     await fireEvent.press(screen.getByRole("button", { name: "Recenter" }));
@@ -302,6 +344,28 @@ describe("Secondary Route & Modal Smoke Tests (#19)", () => {
     );
     expect(screen.queryByRole("button", { name: "Recenter" })).toBeNull();
     expect(mockCamera.fitToCoordinates).toHaveBeenCalledTimes(1);
+  });
+
+  test("Recenter follows the user immediately even at the start of a route", async () => {
+    const { mockCamera } = jest.requireMock("react-native-maps");
+    const start = route.coordinates[0];
+    mockGuidance.mockReturnValue({
+      ...guiding,
+      position: start,
+      progress: getRouteProgress(route, start, maneuvers),
+    });
+    await render(<NavigationScreen />);
+    const map = screen.getByTestId("guidance-map");
+    await fireEvent(map, "mapReady");
+    await fireEvent(screen.getByTestId("turn-card"), "layout", {
+      nativeEvent: { layout: { height: 80 } },
+    });
+    await fireEvent(map, "panDrag");
+    await fireEvent.press(screen.getByRole("button", { name: "Recenter" }));
+    expect(mockCamera.animateCamera).toHaveBeenCalledWith(
+      { center: start },
+      expect.anything(),
+    );
   });
 
   test("SavePlace modal renders disabled Save button and dismisses on Cancel", async () => {

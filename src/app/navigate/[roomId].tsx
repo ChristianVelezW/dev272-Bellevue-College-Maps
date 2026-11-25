@@ -16,7 +16,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { colors } from "@/constants/colors";
 import { useCampus } from "@/context/CampusContext";
-import { campusGraph, campusWalkways } from "@/data/campusGraph";
+import {
+  campusGraph,
+  campusWalkways,
+  mainCampusEntranceBuildingId,
+} from "@/data/campusGraph";
 import { useGuidance } from "@/hooks/useGuidance";
 import { useGuidanceCamera } from "@/hooks/useGuidanceCamera";
 import type {
@@ -41,6 +45,7 @@ const maneuverIcons = {
 const entrances = [...campusGraph.nodes.values()].filter(
   (node) => node.entrance,
 );
+const manualOrigin = `the ${mainCampusEntranceBuildingId} entrance`;
 
 function feet(meters: number) {
   return `${Math.round(meters * 3.281)} ft`;
@@ -131,16 +136,24 @@ function RoomGuidance({
   const { status, permission, route, maneuvers, progress, position } =
     useGuidance(campusGraph, building.id, building.name, avoidStairs);
   const mapRef = useRef<MapView>(null);
-  const camera = useGuidanceCamera(mapRef, route, position);
+  const camera = useGuidanceCamera(
+    mapRef,
+    route,
+    position,
+    progress?.walkedMeters ?? 0,
+  );
   const [selection, setSelection] = useState<{
     route: Route;
     index: number;
   } | null>(null);
-  const manual = status === "denied";
+  const manual = permission === "denied";
   const stepIndex =
     selection && selection.route === route ? selection.index : 0;
   const manualStep = manual ? maneuvers[stepIndex] : undefined;
-  const indoors = status === "arrived" || manualStep?.kind === "arrive";
+  const indoors =
+    status === "manual-indoors" ||
+    status === "arrived" ||
+    manualStep?.kind === "arrive";
   const coordinates = route?.coordinates ?? [];
   const walked =
     progress && progress.walkedMeters > 0
@@ -167,8 +180,9 @@ function RoomGuidance({
     denied:
       manualStep?.text ??
       (avoidStairs
-        ? "No step-free route from the D entrance to this building."
-        : "No walking route from the D entrance to this building."),
+        ? `No step-free route from ${manualOrigin} to this building.`
+        : `No walking route from ${manualOrigin} to this building.`),
+    "manual-indoors": `Start at ${manualOrigin}.`,
     "location-unavailable": "Location unavailable. Check Location Services.",
     "off-campus": "You’re outside the campus paths. Move closer to a walkway.",
     "no-route": avoidStairs
@@ -180,16 +194,17 @@ function RoomGuidance({
   };
   const bannerIcon = showTurn
     ? maneuverIcons[next.kind]
-    : status === "arrived"
+    : indoors
       ? "location"
       : status === "rerouting"
         ? "sync"
         : "locate";
-  const remainingMeters = indoors
-    ? 0
-    : manualStep && route
-      ? route.lengthMeters - manualStep.atMeters
-      : progress?.remainingMeters;
+  const remainingMeters =
+    status === "arrived"
+      ? 0
+      : manualStep && route
+        ? route.lengthMeters - manualStep.atMeters
+        : progress?.remainingMeters;
 
   return (
     <>
@@ -273,7 +288,7 @@ function RoomGuidance({
           <View style={styles.instructionText}>
             {manualStep && (
               <Text style={styles.manualCaption}>
-                {`From the D entrance · Step ${stepIndex + 1} of ${maneuvers.length}`}
+                {`From ${manualOrigin} · Step ${stepIndex + 1} of ${maneuvers.length}`}
               </Text>
             )}
             {status === "guiding" && progress?.metersToNext != null && (
@@ -303,7 +318,7 @@ function RoomGuidance({
       <View
         style={[
           styles.bottomDrawer,
-          maneuvers.length > 0 && styles.expandedDrawer,
+          (indoors || maneuvers.length > 0) && styles.expandedDrawer,
           { paddingBottom: Math.max(insets.bottom, 12) },
         ]}
       >
