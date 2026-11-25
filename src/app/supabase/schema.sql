@@ -31,8 +31,11 @@ create table if not exists public.rooms (
 create table if not exists public.saved_places (
   id uuid primary key default gen_random_uuid(),
   building_id text not null references public.buildings(id) on delete cascade,
-  room_id text not null references public.rooms(id) on delete cascade,
+  room_id text references public.rooms(id) on delete set null,
   label text,
+  location_type text not null check (
+  location_type in ('Study Spot', 'Classroom', 'Food', 'Office', 'Other')),
+  notes text,
   created_at timestamptz not null default now()
 );
 

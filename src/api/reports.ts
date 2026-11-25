@@ -7,6 +7,7 @@ export function mapReportRow(row: ReportRow): IssueReport {
     id: row.id,
     category: row.category,
     building_id: row.building_id,
+    room_id: row.room_id,
     description: row.description,
     created_at: row.created_at,
   };
@@ -31,6 +32,7 @@ export async function createIssueReport(
   input: CreateIssueReportInput,
 ): Promise<IssueReport> {
   const trimmedDescription = input.description.trim();
+
   if (!trimmedDescription) {
     throw new Error("Issue description cannot be empty.");
   }
@@ -39,7 +41,8 @@ export async function createIssueReport(
     .from("reports")
     .insert({
       category: input.category,
-      building_id: input.building_id ?? null,
+      building_id: input.building_id,
+      room_id: input.room_id ?? null,
       description: trimmedDescription,
     })
     .select("*")

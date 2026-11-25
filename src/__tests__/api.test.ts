@@ -52,6 +52,7 @@ describe("Issue Report Validation & Submission (createIssueReport)", () => {
     expect(mockInsert).toHaveBeenCalledWith({
       category: "Wrong Information",
       building_id: "D",
+      room_id: null,
       description: "Hours changed on Friday",
     });
     expect(result).toEqual(mockRow);
@@ -66,6 +67,7 @@ describe("Issue Report Validation & Submission (createIssueReport)", () => {
     await expect(
       createIssueReport({
         category: "Bug",
+        building_id: "L",
         description: "Map pin offset",
       }),
     ).rejects.toThrow("Failed to submit issue report: permission denied");
@@ -86,6 +88,9 @@ describe("Saved Place Submission (createSavedPlace)", () => {
     const result = await createSavedPlace({
       building_id: "L",
       room_id: "L-201",
+      label: null,
+      location_type: "Classroom",
+      notes: null,
     });
 
     expect(supabase.from).toHaveBeenCalledWith("saved_places");
@@ -93,6 +98,8 @@ describe("Saved Place Submission (createSavedPlace)", () => {
       building_id: "L",
       room_id: "L-201",
       label: null,
+      location_type: "Classroom",
+      notes: null,
     });
     expect(result).toEqual(mockRow);
   });
@@ -108,6 +115,8 @@ describe("Saved Place Submission (createSavedPlace)", () => {
         building_id: "INVALID",
         room_id: "INVALID-101",
         label: "Class",
+        location_type: "Classroom",
+        notes: null,
       }),
     ).rejects.toThrow("Failed to save place: foreign key violation");
   });

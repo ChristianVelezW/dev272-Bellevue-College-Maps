@@ -1,3 +1,9 @@
+import { getBuildings } from "@/api/building";
+import {
+  createSavedPlace,
+  deleteSavedPlace,
+  getSavedPlaces,
+} from "@/api/savedPlaces";
 import {
   createContext,
   ReactNode,
@@ -6,13 +12,7 @@ import {
   useEffect,
   useState,
 } from "react";
-import { CampusBuilding, SavedPlace } from "../types/campus";
-import { getBuildings } from "@/api/building";
-import {
-  createSavedPlace,
-  deleteSavedPlace,
-  getSavedPlaces,
-} from "@/api/savedPlaces";
+import { CampusBuilding, LocationType, SavedPlace } from "../types/campus";
 
 export type { SavedPlace } from "@/types/campus";
 
@@ -29,8 +29,10 @@ type CampusContextValue = {
   refreshCampusData: () => Promise<void>;
   addSavedPlace: (
     buildingId: string,
-    roomId: string,
-    label: string | null,
+    roomId: string | null,
+    label: string,
+    locationType: LocationType,
+    notes: string | null,
   ) => Promise<SavedPlace>;
   removeSavedPlace: (id: string) => Promise<void>;
 };
@@ -131,10 +133,18 @@ export function CampusProvider({ children }: { children: ReactNode }) {
   const addSavedPlace = useCallback(
     async (
       building_id: string,
-      room_id: string,
-      label: string | null,
+      room_id: string | null,
+      label: string,
+      location_type: LocationType,
+      notes: string | null,
     ): Promise<SavedPlace> => {
-      const created = await createSavedPlace({ building_id, room_id, label });
+      const created = await createSavedPlace({
+        building_id,
+        room_id,
+        label,
+        location_type,
+        notes,
+      });
       setSavedPlaces((prev) => [created, ...prev]);
       return created;
     },

@@ -8,6 +8,9 @@ export type RoomType = "Classroom" | "Computer Lab" | "Office" | "Study";
 export type ReportCategory =
   "Bug" | "Feature Request" | "Wrong Information" | "Other";
 
+export type LocationType =
+  "Study Spot" | "Classroom" | "Food" | "Office" | "Other";
+
 export type CampusRoom = {
   id: string;
   building_id?: string;
@@ -56,23 +59,29 @@ export type RoomRow = {
 export type SavedPlaceRow = {
   id: string;
   building_id: string;
-  room_id: string;
+  room_id: string | null;
   label: string | null;
+  location_type: LocationType;
+  notes: string | null;
   created_at: string;
 };
 
 export type SavedPlace = {
   id: string;
   building_id: string;
-  room_id: string;
+  room_id: string | null;
   label: string | null;
+  location_type: LocationType;
+  notes: string | null;
   created_at: string;
 };
 
 export type CreateSavedPlaceInput = {
   building_id: string;
-  room_id: string;
-  label?: string | null;
+  room_id: string | null;
+  label: string | null;
+  location_type: LocationType;
+  notes: string | null;
 };
 
 export type UpdateSavedPlaceInput = {
@@ -83,6 +92,7 @@ export type ReportRow = {
   id: string;
   category: ReportCategory;
   building_id: string | null;
+  room_id: string | null;
   description: string;
   created_at: string;
 };
@@ -91,12 +101,14 @@ export type IssueReport = {
   id: string;
   category: ReportCategory;
   building_id: string | null;
+  room_id: string | null;
   description: string;
   created_at: string;
 };
 
 export type CreateIssueReportInput = {
   category: ReportCategory;
-  building_id?: string | null;
+  building_id: string;
+  room_id?: string | null;
   description: string;
 };

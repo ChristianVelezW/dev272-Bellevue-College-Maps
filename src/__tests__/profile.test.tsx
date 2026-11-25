@@ -1,7 +1,7 @@
-import { fireEvent, render, screen } from "@testing-library/react-native";
 import { getBuildings } from "@/api/building";
 import { getSavedPlaces } from "@/api/savedPlaces";
 import type { CampusBuilding, SavedPlace } from "@/types/campus";
+import { fireEvent, render, screen } from "@testing-library/react-native";
 import ProfileScreen from "../app/(tabs)/profile";
 import { CampusProvider } from "../context/CampusContext";
 
@@ -52,6 +52,8 @@ const mockSavedPlaces: SavedPlace[] = [
     room_id: "L-302",
     label: "Quiet Study",
     created_at: "2026-11-01T00:00:00.000Z",
+    location_type: "Other",
+    notes: "",
   },
 ];
 
