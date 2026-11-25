@@ -37,6 +37,14 @@ export async function createIssueReport(
     throw new Error("Issue description cannot be empty.");
   }
 
+  if (trimmedDescription.length < 20) {
+    throw new Error("Description must be at least 20 characters.");
+  }
+
+  if (trimmedDescription.length > 300) {
+    throw new Error("Description cannot exceed 300 characters.");
+  }
+
   const { data, error } = await supabase
     .from("reports")
     .insert({

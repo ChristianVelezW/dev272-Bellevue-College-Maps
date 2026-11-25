@@ -50,7 +50,7 @@ const mockSavedPlaces: SavedPlace[] = [
     id: "sp-1",
     building_id: "L",
     room_id: "L-302",
-    label: "Quiet Study",
+    label: "Quiet Study Room",
     created_at: "2026-11-01T00:00:00.000Z",
     location_type: "Other",
     notes: "",
@@ -75,6 +75,29 @@ describe("Profile Screen", () => {
     expect(screen.getByText("SAVED PLACES")).toBeOnTheScreen();
     expect(screen.getByText("NAVIGATION")).toBeOnTheScreen();
     expect(screen.getByText("APP")).toBeOnTheScreen();
+  });
+
+  test("displays building-only saved places using their custom name", async () => {
+    (getSavedPlaces as jest.Mock).mockResolvedValue([
+      {
+        id: "sp-2",
+        building_id: "L",
+        room_id: null,
+        label: "My Favourite Building",
+        created_at: "2026-11-24T12:00:00.000Z",
+        location_type: "Other",
+        notes: null,
+      },
+    ]);
+
+    await render(
+      <CampusProvider>
+        <ProfileScreen />
+      </CampusProvider>,
+    );
+
+    expect(await screen.findByText("My Favourite Building")).toBeOnTheScreen();
+    expect(screen.getByText("Building")).toBeOnTheScreen();
   });
 
   test("opens the correct building and floor when a saved place is selected", async () => {

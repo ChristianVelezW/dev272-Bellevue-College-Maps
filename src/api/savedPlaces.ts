@@ -11,7 +11,7 @@ export function mapSavedPlaceRow(row: SavedPlaceRow): SavedPlace {
   return {
     id: row.id,
     building_id: row.building_id,
-    room_id: row.room_id,
+    room_id: row.room_id ?? null,
     label: row.label,
     location_type: row.location_type,
     notes: row.notes,

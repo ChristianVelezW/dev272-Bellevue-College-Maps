@@ -34,6 +34,7 @@ export default function ReportIssue() {
   const [roomId, setRoomId] = useState("");
   const [description, setDescription] = useState("");
   const [errors, setErrors] = useState({
+    category: "",
     buildingId: "",
     description: "",
   });
@@ -103,10 +104,10 @@ export default function ReportIssue() {
 
     if (!description.trim()) {
       newErrors.description = "Please describe the issue";
-    } else if (description.trim().length < 5) {
-      newErrors.description = "Description must be at least 5 characters";
-    } else if (description.trim().length > 500) {
-      newErrors.description = "Description cannot exceed 500 characters";
+    } else if (description.trim().length < 20) {
+      newErrors.description = "Description must be at least 20 characters";
+    } else if (description.trim().length > 300) {
+      newErrors.description = "Description cannot exceed 300 characters";
     }
 
     if (roomId && !availableRooms.some((room) => room.id === roomId)) {
@@ -159,16 +160,25 @@ export default function ReportIssue() {
         {/* Issue Type */}
         <View style={styles.section}>
           <Text style={styles.label}>Issue Type *</Text>
-          <View style={styles.filterContainer}>
+          <View style={[styles.filterContainer]}>
             {REPORT_FILTER.map((category) => (
               <Filter
                 key={category}
                 label={category}
                 isSelected={activeFilter === category}
-                onPress={() => setActiveFilter(category)}
+                onPress={() => {
+                  setActiveFilter(category);
+                  setErrors((previous) => ({
+                    ...previous,
+                    category: "",
+                  }));
+                }}
               />
             ))}
           </View>
+          {errors.category ? (
+            <Text style={styles.fieldError}>{errors.category}</Text>
+          ) : null}
         </View>
 
         {/* Building */}
@@ -245,12 +255,21 @@ export default function ReportIssue() {
             value={description}
             onChangeText={(text) => {
               setDescription(text);
-              if (text.trim().length >= 5 && text.trim().length <= 500) {
-                setErrors((previous) => ({
+
+              const length = text.trim().length;
+
+              setErrors((previous) => {
+                if (!previous.description) return previous;
+                return {
                   ...previous,
-                  description: "",
-                }));
-              }
+                  description:
+                    length < 20
+                      ? "Description must be at least 20 characters"
+                      : length > 300
+                        ? "Description cannot exceed 300 characters"
+                        : "",
+                };
+              });
             }}
             multiline
             textAlignVertical="top"
@@ -258,7 +277,7 @@ export default function ReportIssue() {
           {errors.description ? (
             <Text style={styles.fieldError}>{errors.description}</Text>
           ) : null}
-          <Text style={styles.characterCount}>{description.length}/500</Text>
+          <Text style={styles.characterCount}>{description.length}/300</Text>
         </View>
 
         {/* Add Photo Section */}

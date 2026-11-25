@@ -42,7 +42,7 @@ export type BuildingRow = {
   walk_time: string;
   floors: number[];
   tags: string[];
-  created_at: string[];
+  created_at: string;
 };
 
 export type RoomRow = {

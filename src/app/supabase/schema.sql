@@ -33,8 +33,7 @@ create table if not exists public.saved_places (
   building_id text not null references public.buildings(id) on delete cascade,
   room_id text references public.rooms(id) on delete set null,
   label text,
-  location_type text not null check (
-  location_type in ('Study Spot', 'Classroom', 'Food', 'Office', 'Other')),
+  location_type text not null check (location_type in ('Study Spot', 'Classroom', 'Food', 'Office', 'Other')),
   notes text,
   created_at timestamptz not null default now()
 );
@@ -44,9 +43,27 @@ create table if not exists public.reports (
   id uuid primary key default gen_random_uuid(),
   category text not null check (category in ('Bug', 'Feature Request', 'Wrong Information', 'Other')),
   building_id text references public.buildings(id) on delete set null,
+  room_id text references public.rooms(id) on delete set null,
   description text not null check (char_length(trim(description)) > 0),
   created_at timestamptz not null default now()
 );
+
+-- ==========================================
+-- Migrations (for existing databases)
+-- ==========================================
+
+-- Update saved_places: allow empty room_id, add location_type and notes
+alter table public.saved_places
+  alter column room_id drop not null;
+
+alter table public.saved_places
+  add column if not exists location_type text not null default 'Other'
+    check (location_type in ('Study Spot', 'Classroom', 'Food', 'Office', 'Other')),
+  add column if not exists notes text;
+
+-- Update reports: add optional room_id foreign key
+alter table public.reports
+  add column if not exists room_id text references public.rooms(id) on delete set null;
 
 -- ==========================================
 -- Row Level Security (RLS) & Policies
@@ -115,6 +132,7 @@ insert into public.rooms (id, building_id, number, name, floor, type, is_accessi
   ('R-110', 'R', 'R-110', 'Seminar Room', 1, 'Classroom', true)
 on conflict (id) do nothing;
 
-insert into public.saved_places (building_id, room_id, label) values
-  ('D', 'D-101', 'Library Study Spot'),
-  ('L', 'L-302', 'Quiet Study');
+insert into public.saved_places (building_id, room_id, label, location_type, notes) values
+  ('D', 'D-101', 'Library Study Spot', 'Study Spot', null),
+  ('L', 'L-302', 'Quiet Study', 'Study Spot', null)
+on conflict do nothing;
