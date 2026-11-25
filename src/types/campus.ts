@@ -5,6 +5,60 @@ export type BuildingCatergory =
 
 export type RoomType = "Classroom" | "Computer Lab" | "Office" | "Study";
 
+export type Coordinate = {
+  latitude: number;
+  longitude: number;
+};
+
+export type PathNode = {
+  id: number;
+  coordinate: Coordinate;
+  entrance?: { buildingId: string; accessible: boolean };
+};
+
+export type PathEdge = {
+  from: number;
+  to: number;
+  lengthMeters: number;
+  stairs: boolean;
+};
+
+export type CampusGraph = {
+  nodes: Map<number, PathNode>;
+  neighbors: Map<number, { nodeId: number; edge: PathEdge }[]>;
+};
+
+export type Route = {
+  nodeIds: number[];
+  coordinates: Coordinate[];
+  lengthMeters: number;
+};
+
+export type Maneuver = {
+  kind:
+    | "start"
+    | "slight-left"
+    | "left"
+    | "sharp-left"
+    | "slight-right"
+    | "right"
+    | "sharp-right"
+    | "arrive";
+  atMeters: number;
+  coordinate: Coordinate;
+  text: string;
+};
+
+export type RouteProgress = {
+  walkedMeters: number;
+  remainingMeters: number;
+  offRouteMeters: number;
+  nextManeuver: Maneuver | null;
+  metersToNext: number | null;
+  splitIndex: number;
+  splitPoint: Coordinate;
+};
+
 export type ReportCategory =
   "Bug" | "Feature Request" | "Wrong Information" | "Other";
 
