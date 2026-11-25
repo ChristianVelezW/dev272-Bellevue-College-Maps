@@ -11,8 +11,10 @@ export function mapSavedPlaceRow(row: SavedPlaceRow): SavedPlace {
   return {
     id: row.id,
     building_id: row.building_id,
-    room_id: row.room_id,
+    room_id: row.room_id ?? null,
     label: row.label,
+    location_type: row.location_type,
+    notes: row.notes,
     created_at: row.created_at,
   };
 }
@@ -40,7 +42,9 @@ export async function createSavedPlace(
     .insert({
       building_id: input.building_id,
       room_id: input.room_id,
-      label: input.label ?? null,
+      label: input.label,
+      location_type: input.location_type,
+      notes: input.notes,
     })
     .select("*")
     .single();
