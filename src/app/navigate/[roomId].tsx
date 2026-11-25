@@ -1,9 +1,11 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import type { ComponentProps } from "react";
+import { type ComponentProps, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Linking,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -16,7 +18,14 @@ import { colors } from "@/constants/colors";
 import { useCampus } from "@/context/CampusContext";
 import { campusGraph, campusWalkways } from "@/data/campusGraph";
 import { useGuidance } from "@/hooks/useGuidance";
-import type { CampusBuilding, CampusRoom, Maneuver } from "@/types/campus";
+import { useGuidanceCamera } from "@/hooks/useGuidanceCamera";
+import type {
+  CampusBuilding,
+  CampusRoom,
+  Maneuver,
+  Route,
+} from "@/types/campus";
+import { buildIndoorSteps } from "@/utils/indoorSteps";
 
 const maneuverIcons = {
   start: "arrow-up",
@@ -119,19 +128,27 @@ function RoomGuidance({
 }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { status, permission, route, maneuvers, progress } = useGuidance(
-    campusGraph,
-    building.id,
-    building.name,
-    avoidStairs,
-  );
+  const { status, permission, route, maneuvers, progress, position } =
+    useGuidance(campusGraph, building.id, building.name, avoidStairs);
+  const mapRef = useRef<MapView>(null);
+  const camera = useGuidanceCamera(mapRef, route, position);
+  const [selection, setSelection] = useState<{
+    route: Route;
+    index: number;
+  } | null>(null);
+  const manual = status === "denied";
+  const stepIndex =
+    selection && selection.route === route ? selection.index : 0;
+  const manualStep = manual ? maneuvers[stepIndex] : undefined;
+  const indoors = status === "arrived" || manualStep?.kind === "arrive";
   const coordinates = route?.coordinates ?? [];
   const walked =
     progress && progress.walkedMeters > 0
       ? [...coordinates.slice(0, progress.splitIndex + 1), progress.splitPoint]
       : [];
-  const remaining =
-    progress && progress.remainingMeters > 0
+  const remaining = manual
+    ? coordinates
+    : progress && progress.remainingMeters > 0
       ? [progress.splitPoint, ...coordinates.slice(progress.splitIndex + 1)]
       : [];
   const entrance =
@@ -142,13 +159,16 @@ function RoomGuidance({
         (!avoidStairs || node.entrance.accessible),
     )?.coordinate;
 
-  const next = progress?.nextManeuver;
-  const showTurn = status === "guiding" && next != null;
+  const next = manualStep ?? progress?.nextManeuver;
+  const showTurn = (manual || status === "guiding") && next != null;
   const statusMessages = {
     asking: "Allow location access to start directions.",
     locating: "Finding your location…",
     denied:
-      "Location permission denied. Allow location in Settings to start directions.",
+      manualStep?.text ??
+      (avoidStairs
+        ? "No step-free route from the D entrance to this building."
+        : "No walking route from the D entrance to this building."),
     "location-unavailable": "Location unavailable. Check Location Services.",
     "off-campus": "You’re outside the campus paths. Move closer to a walkway.",
     "no-route": avoidStairs
@@ -165,12 +185,19 @@ function RoomGuidance({
       : status === "rerouting"
         ? "sync"
         : "locate";
-  const remainingMeters = status === "arrived" ? 0 : progress?.remainingMeters;
+  const remainingMeters = indoors
+    ? 0
+    : manualStep && route
+      ? route.lengthMeters - manualStep.atMeters
+      : progress?.remainingMeters;
 
   return (
     <>
       <View style={styles.mapContainer}>
         <MapView
+          ref={mapRef}
+          onMapReady={camera.onMapReady}
+          onPanDrag={camera.onPanDrag}
           testID="guidance-map"
           style={StyleSheet.absoluteFill}
           showsUserLocation={permission === "granted"}
@@ -221,8 +248,22 @@ function RoomGuidance({
             </Marker>
           )}
         </MapView>
+        {camera.canRecenter && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Recenter"
+            onPress={camera.recenter}
+            style={styles.recenter}
+          >
+            <Ionicons name="locate" size={18} color={colors.brand} />
+            <Text style={styles.controlText}>Recenter</Text>
+          </Pressable>
+        )}
         <View
           testID="turn-card"
+          onLayout={({ nativeEvent }) =>
+            camera.setBannerHeight(nativeEvent.layout.height)
+          }
           style={styles.instructionCard}
           accessibilityLiveRegion="polite"
         >
@@ -230,7 +271,12 @@ function RoomGuidance({
             <Ionicons name={bannerIcon} size={32} color={colors.white} />
           </View>
           <View style={styles.instructionText}>
-            {showTurn && progress?.metersToNext != null && (
+            {manualStep && (
+              <Text style={styles.manualCaption}>
+                {`From the D entrance · Step ${stepIndex + 1} of ${maneuvers.length}`}
+              </Text>
+            )}
+            {status === "guiding" && progress?.metersToNext != null && (
               <Text style={styles.instructionDistance}>
                 {feet(progress.metersToNext)}
               </Text>
@@ -238,6 +284,18 @@ function RoomGuidance({
             <Text style={styles.instructionSubtitle}>
               {statusMessages[status]}
             </Text>
+            {manual && (
+              <View style={styles.permissionActions}>
+                <Text style={styles.instructionSubtitle}>Location off</Text>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => Linking.openSettings()}
+                  style={styles.settings}
+                >
+                  <Text style={styles.settingsText}>Open Settings</Text>
+                </Pressable>
+              </View>
+            )}
           </View>
         </View>
       </View>
@@ -267,24 +325,70 @@ function RoomGuidance({
             </View>
           )}
         </View>
-        {maneuvers.length > 0 && (
+        {indoors ? (
           <View style={styles.stepsSection}>
-            <Text style={styles.sectionTitle}>DIRECTIONS</Text>
-            <ScrollView style={styles.stepsList} nestedScrollEnabled>
-              {maneuvers.map((step, i) => (
-                <View key={i} style={styles.stepRow}>
-                  <View style={styles.stepIconContainer}>
-                    <Ionicons
-                      name={maneuverIcons[step.kind]}
-                      size={21}
-                      color={colors.brand}
-                    />
+            <Text style={styles.sectionTitle}>INDOOR DIRECTIONS</Text>
+            <ScrollView style={styles.stepsList}>
+              {buildIndoorSteps(building.name, room, avoidStairs).map(
+                (instruction, i) => (
+                  <View key={instruction} style={styles.stepRow}>
+                    <View style={styles.stepIconContainer}>
+                      <Text style={styles.controlText}>{i + 1}</Text>
+                    </View>
+                    <Text style={styles.stepTitle}>{instruction}</Text>
                   </View>
-                  <Text style={styles.stepTitle}>{step.text}</Text>
-                  <Text style={styles.stepDistance}>{feet(step.atMeters)}</Text>
-                </View>
-              ))}
+                ),
+              )}
             </ScrollView>
+          </View>
+        ) : (
+          maneuvers.length > 0 && (
+            <View style={styles.stepsSection}>
+              <Text style={styles.sectionTitle}>DIRECTIONS</Text>
+              <ScrollView style={styles.stepsList} nestedScrollEnabled>
+                {maneuvers.map((step, i) => (
+                  <View
+                    key={i}
+                    style={[
+                      styles.stepRow,
+                      manual && i === stepIndex && styles.selectedStep,
+                    ]}
+                    accessibilityState={
+                      manual ? { selected: i === stepIndex } : undefined
+                    }
+                  >
+                    <View style={styles.stepIconContainer}>
+                      <Ionicons
+                        name={maneuverIcons[step.kind]}
+                        size={21}
+                        color={colors.brand}
+                      />
+                    </View>
+                    <Text style={styles.stepTitle}>{step.text}</Text>
+                    <Text style={styles.stepDistance}>
+                      {feet(step.atMeters)}
+                    </Text>
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+          )
+        )}
+        {manualStep && route && (
+          <View style={styles.stepControls}>
+            <PrimaryButton
+              label="Back"
+              variant="secondary"
+              disabled={stepIndex === 0}
+              onPress={() => setSelection({ route, index: stepIndex - 1 })}
+              style={styles.stepButton}
+            />
+            <PrimaryButton
+              label="Next"
+              disabled={stepIndex === maneuvers.length - 1}
+              onPress={() => setSelection({ route, index: stepIndex + 1 })}
+              style={styles.stepButton}
+            />
           </View>
         )}
         <PrimaryButton
@@ -299,6 +403,37 @@ function RoomGuidance({
 }
 
 const styles = StyleSheet.create({
+  stepControls: { flexDirection: "row", gap: 12 },
+  stepButton: { flex: 1, width: "auto", minHeight: 44, paddingVertical: 8 },
+  selectedStep: { backgroundColor: colors.tint },
+  manualCaption: { color: colors.white, fontWeight: "700", fontSize: 14 },
+  permissionActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    columnGap: 12,
+  },
+  settings: { minHeight: 44, justifyContent: "center" },
+  settingsText: {
+    color: colors.white,
+    textDecorationLine: "underline",
+    fontWeight: "600",
+  },
+  recenter: {
+    position: "absolute",
+    bottom: 14,
+    right: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    minHeight: 44,
+    backgroundColor: colors.white,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: colors.tintBorder,
+  },
+  controlText: { fontWeight: "600", color: colors.brand },
   container: {
     flex: 1,
     backgroundColor: colors.white,

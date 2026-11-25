@@ -1,5 +1,6 @@
 import * as Location from "expo-location";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AppState } from "react-native";
 import type {
   CampusGraph,
   Coordinate,
@@ -12,6 +13,7 @@ import { getRouteProgress } from "@/utils/progress";
 import {
   maxSnapDistanceMeters,
   routeFromPosition,
+  shortestRoute,
   snapToNetwork,
 } from "@/utils/routing";
 
@@ -56,16 +58,35 @@ export function useGuidance(
 
   useEffect(() => {
     let active = true;
-    void Location.requestForegroundPermissionsAsync().then(
-      (response) => {
-        if (active) setPermission(response.granted ? "granted" : "denied");
-      },
-      () => {
-        if (active) setPermission("denied");
-      },
-    );
+    let permissionCheck = 0;
+    let requested = false;
+    async function checkPermission(request: boolean) {
+      const check = ++permissionCheck;
+      let granted: boolean;
+      try {
+        const response = await (request
+          ? Location.requestForegroundPermissionsAsync()
+          : Location.getForegroundPermissionsAsync());
+        granted = response.granted;
+      } catch {
+        if (!request) return;
+        granted = false;
+      }
+      if (!active || check !== permissionCheck) return;
+      requested = true;
+      if (!granted) {
+        lastPosition.current = null;
+        setGuidance(initialGuidance);
+      }
+      setPermission(granted ? "granted" : "denied");
+    }
+    void checkPermission(true);
+    const listener = AppState.addEventListener("change", (state) => {
+      if (requested && state === "active") void checkPermission(false);
+    });
     return () => {
       active = false;
+      listener.remove();
     };
   }, []);
 
@@ -163,8 +184,23 @@ export function useGuidance(
     };
   }, [permission, graph, targetBuildingId, targetBuildingName, avoidStairs]);
 
+  const manual = useMemo(() => {
+    if (permission !== "denied") return null;
+    const start = [...graph.nodes.values()].find(
+      (node) => node.entrance?.buildingId === "D",
+    );
+    const route = start
+      ? shortestRoute(graph, start.id, targetBuildingId, avoidStairs)
+      : null;
+    return {
+      ...initialGuidance,
+      route,
+      maneuvers: route ? buildManeuvers(route, targetBuildingName) : [],
+    };
+  }, [permission, graph, targetBuildingId, targetBuildingName, avoidStairs]);
+
   return {
-    ...guidance,
+    ...(manual ?? guidance),
     permission,
     status: permission === "granted" ? guidance.status : permission,
   };

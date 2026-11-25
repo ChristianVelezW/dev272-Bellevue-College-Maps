@@ -4,6 +4,7 @@ import {
   screen,
   within,
 } from "@testing-library/react-native";
+import { Linking } from "react-native";
 import { campusGraph, campusWalkways } from "@/data/campusGraph";
 import { colors } from "@/constants/colors";
 import { useGuidance } from "@/hooks/useGuidance";
@@ -23,7 +24,7 @@ const mockBuildings = [
     id: "C",
     code: "C",
     name: "Student Union",
-    rooms: [{ id: "room-key", number: "C-102" }],
+    rooms: [{ id: "room-key", number: "C-102", floor: 1, is_accessible: true }],
   },
 ];
 jest.mock("@/context/CampusContext", () => ({
@@ -175,7 +176,7 @@ describe("Secondary Route & Modal Smoke Tests (#19)", () => {
   test.each([
     ["asking", /allow location access/i],
     ["locating", /finding your location/i],
-    ["denied", /permission denied/i],
+    ["denied", /location off/i],
     ["location-unavailable", /location unavailable/i],
     ["off-campus", /outside the campus paths/i],
     ["no-route", /no step-free route/i],
@@ -196,6 +197,111 @@ describe("Secondary Route & Modal Smoke Tests (#19)", () => {
       expect(screen.getByTestId("guidance-map").props.showsUserLocation).toBe(
         false,
       );
+  });
+
+  test("manual directions draw the full route and step forward and back without GPS", async () => {
+    mockGuidance.mockReturnValue({
+      ...guiding,
+      status: "denied",
+      permission: "denied",
+      progress: null,
+      position: null,
+    });
+    const settings = jest.spyOn(Linking, "openSettings").mockResolvedValue();
+    await render(<NavigationScreen />);
+    const card = within(screen.getByTestId("turn-card"));
+    const back = () => screen.getByRole("button", { name: "Back" });
+    const next = () => screen.getByRole("button", { name: "Next" });
+    expect(card.getByText(/from the D entrance/i)).toBeOnTheScreen();
+    expect(back()).toBeDisabled();
+    expect(screen.getByTestId("remaining-route").props.coordinates).toEqual(
+      route.coordinates,
+    );
+    expect(screen.queryByTestId("walked-route")).toBeNull();
+    for (const step of maneuvers.slice(1)) {
+      await fireEvent.press(next());
+      expect(card.getByText(step.text)).toBeOnTheScreen();
+    }
+    expect(next()).toBeDisabled();
+    expect(screen.getByText("Find room C-102.")).toBeOnTheScreen();
+    await fireEvent.press(back());
+    expect(
+      card.getByText(maneuvers[maneuvers.length - 2].text),
+    ).toBeOnTheScreen();
+    expect(screen.queryByText("INDOOR DIRECTIONS")).toBeNull();
+    await fireEvent.press(card.getByRole("button", { name: "Open Settings" }));
+    expect(settings).toHaveBeenCalledTimes(1);
+    settings.mockRestore();
+  });
+
+  test("a denied user can open Settings even when no manual route exists", async () => {
+    mockAvoidStairs = true;
+    mockGuidance.mockReturnValue({
+      status: "denied",
+      permission: "denied",
+      route: null,
+      maneuvers: [],
+      progress: null,
+      position: null,
+    });
+    await render(<NavigationScreen />);
+    expect(
+      screen.getByText(/no step-free route from the D entrance/i),
+    ).toBeOnTheScreen();
+    expect(
+      screen.getByRole("button", { name: "Open Settings" }),
+    ).toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: "Next" })).toBeNull();
+  });
+
+  test("arriving at the entrance displays the room's indoor directions", async () => {
+    mockGuidance.mockReturnValue({ ...guiding, status: "arrived" });
+    await render(<NavigationScreen />);
+    expect(screen.getByText("INDOOR DIRECTIONS")).toBeOnTheScreen();
+    expect(screen.getByText("Enter Student Union.")).toBeOnTheScreen();
+    expect(screen.getByText("Take the elevator to floor 1.")).toBeOnTheScreen();
+    expect(screen.getByText("Find room C-102.")).toBeOnTheScreen();
+  });
+
+  test("fits the route once, follows new fixes and pauses until Recenter after a drag", async () => {
+    const { mockCamera } = jest.requireMock("react-native-maps");
+    const { rerender } = await render(<NavigationScreen />);
+    const map = screen.getByTestId("guidance-map");
+    await fireEvent(map, "mapReady");
+    await fireEvent(screen.getByTestId("turn-card"), "layout", {
+      nativeEvent: { layout: { height: 80 } },
+    });
+    expect(mockCamera.fitToCoordinates).toHaveBeenCalledWith(
+      route.coordinates,
+      {
+        edgePadding: { top: 112, left: 36, bottom: 32, right: 36 },
+        animated: true,
+      },
+    );
+    expect(mockCamera.animateCamera).not.toHaveBeenCalled();
+    mockGuidance.mockReturnValue({
+      ...guiding,
+      position: route.coordinates[1],
+    });
+    await rerender(<NavigationScreen />);
+    expect(mockCamera.animateCamera).toHaveBeenCalledWith(
+      { center: route.coordinates[1] },
+      expect.anything(),
+    );
+    await fireEvent(map, "panDrag");
+    mockGuidance.mockReturnValue({
+      ...guiding,
+      position: route.coordinates[2],
+    });
+    await rerender(<NavigationScreen />);
+    expect(mockCamera.animateCamera).toHaveBeenCalledTimes(1);
+    await fireEvent.press(screen.getByRole("button", { name: "Recenter" }));
+    expect(mockCamera.animateCamera).toHaveBeenLastCalledWith(
+      { center: route.coordinates[2] },
+      expect.anything(),
+    );
+    expect(screen.queryByRole("button", { name: "Recenter" })).toBeNull();
+    expect(mockCamera.fitToCoordinates).toHaveBeenCalledTimes(1);
   });
 
   test("SavePlace modal renders disabled Save button and dismisses on Cancel", async () => {

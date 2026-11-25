@@ -1,5 +1,6 @@
 import { act, renderHook } from "@testing-library/react-native";
 import * as Location from "expo-location";
+import { AppState } from "react-native";
 import { campusGraph } from "@/data/campusGraph";
 import { useGuidance } from "@/hooks/useGuidance";
 import { buildGraph } from "@/utils/graph";
@@ -8,6 +9,7 @@ jest.mock("expo-location", () => ({
   Accuracy: { High: 4 },
   PermissionStatus: { GRANTED: "granted", DENIED: "denied" },
   requestForegroundPermissionsAsync: jest.fn(),
+  getForegroundPermissionsAsync: jest.fn(),
   watchPositionAsync: jest.fn(),
 }));
 
@@ -52,6 +54,9 @@ const { graph } = buildGraph({
 
 beforeEach(() => {
   jest.resetAllMocks();
+  jest
+    .spyOn(AppState, "addEventListener")
+    .mockReturnValue({ remove: jest.fn() });
   requestPermission.mockResolvedValue(granted);
   watch.mockResolvedValue({ remove });
 });
@@ -108,6 +113,43 @@ test("permission stays asking until resolved and a denial never starts the watch
     route: null,
   });
   expect(watch).not.toHaveBeenCalled();
+});
+
+test("denial routes from D and returning from Settings starts live GPS after a grant", async () => {
+  requestPermission.mockResolvedValue({
+    ...granted,
+    granted: false,
+    status: Location.PermissionStatus.DENIED,
+  });
+  const check = jest.mocked(Location.getForegroundPermissionsAsync);
+  check.mockResolvedValue(granted);
+  const listener = jest.mocked(AppState.addEventListener);
+  const { result, unmount } = await renderHook(() =>
+    useGuidance(campusGraph, "C", "Student Union", true),
+  );
+  const entrance = [...campusGraph.nodes.values()].find(
+    (node) => node.entrance?.buildingId === "D",
+  );
+  expect(result.current.route?.coordinates[0]).toEqual(entrance?.coordinate);
+  expect(result.current.route?.lengthMeters).toBeCloseTo(128, 0);
+  expect(result.current.maneuvers.map((step) => step.kind)).toEqual([
+    "start",
+    "left",
+    "slight-right",
+    "left",
+    "arrive",
+  ]);
+  expect(result.current.position).toBeNull();
+  expect(watch).not.toHaveBeenCalled();
+  await act(() => listener.mock.lastCall![1]("active"));
+  expect(check).toHaveBeenCalledTimes(1);
+  expect(result.current).toMatchObject({
+    permission: "granted",
+    status: "locating",
+    route: null,
+  });
+  expect(watch).toHaveBeenCalledTimes(1);
+  await unmount();
 });
 
 test("accurate fixes build guidance, advance progress, and latch arrival under 10 m", async () => {
