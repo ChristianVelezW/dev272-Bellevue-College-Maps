@@ -1,7 +1,9 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   fireEvent,
   render,
   screen,
+  waitFor,
   within,
 } from "@testing-library/react-native";
 import { Linking } from "react-native";
@@ -62,6 +64,10 @@ const guiding: ReturnType<typeof useGuidance> = {
   position: midpoint,
 };
 
+jest.mock("react-native-element-dropdown", () => ({
+  Dropdown: () => null,
+}));
+
 jest.mock("react-native-safe-area-context", () => ({
   ...jest.requireActual("react-native-safe-area-context"),
   useSafeAreaInsets: () => ({
@@ -90,6 +96,23 @@ beforeEach(() => {
   mockAvoidStairs = false;
   mockGuidance.mockReturnValue(guiding);
 });
+
+function renderWithQueryClient(component: React.ReactElement) {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+      mutations: {
+        retry: false,
+      },
+    },
+  });
+
+  return render(
+    <QueryClientProvider client={queryClient}>{component}</QueryClientProvider>,
+  );
+}
 
 describe("Secondary Route & Modal Smoke Tests (#19)", () => {
   test("NavigationScreen renders room directions and returns home on End Route", async () => {
@@ -369,7 +392,7 @@ describe("Secondary Route & Modal Smoke Tests (#19)", () => {
   });
 
   test("SavePlace modal renders disabled Save button and dismisses on Cancel", async () => {
-    await render(<SavePlace />);
+    await renderWithQueryClient(<SavePlace />);
 
     expect(screen.getByRole("button", { name: "Save Place" })).toBeDisabled();
     await fireEvent.press(screen.getByRole("button", { name: "Cancel" }));
@@ -377,13 +400,19 @@ describe("Secondary Route & Modal Smoke Tests (#19)", () => {
   });
 
   test("ReportIssue modal renders category filters, disabled Submit button, and dismisses on Cancel", async () => {
-    await render(<ReportIssue />);
+    await renderWithQueryClient(<ReportIssue />);
 
     expect(screen.getByText("Report an Issue")).toBeOnTheScreen();
-    expect(screen.getByRole("button", { name: "Bug, filter" })).toBeSelected();
+    expect(
+      screen.getByRole("button", { name: "Bug, filter" }),
+    ).not.toBeSelected();
     expect(
       screen.getByRole("button", { name: "Submit Report" }),
     ).toBeDisabled();
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Cancel" })).toBeOnTheScreen();
+    });
 
     await fireEvent.press(screen.getByRole("button", { name: "Cancel" }));
     expect(mockBack).toHaveBeenCalledTimes(1);

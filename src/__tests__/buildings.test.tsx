@@ -53,6 +53,8 @@ function makeSavedPlace(overrides: Partial<SavedPlace> = {}): SavedPlace {
     building_id: "L",
     room_id: "L-101",
     label: null,
+    location_type: "Study Spot",
+    notes: null,
     created_at: "2026-11-01T00:00:00.000Z",
     ...overrides,
   };
